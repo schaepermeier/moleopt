@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // run_mogsa_cpp
 void run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size);
-RcppExport SEXP _mogsaeda_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP) {
+RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Function >::type fn(fnSEXP);
@@ -23,11 +23,11 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mogsaeda_run_mogsa_cpp", (DL_FUNC) &_mogsaeda_run_mogsa_cpp, 7},
+    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 7},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_mogsaeda(DllInfo *dll) {
+RcppExport void R_init_mogsacpp(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
