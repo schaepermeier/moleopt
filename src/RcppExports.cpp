@@ -6,9 +6,10 @@
 using namespace Rcpp;
 
 // run_mogsa_cpp
-void run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size);
+List run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size);
 RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Function >::type fn(fnSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type starting_point(starting_pointSEXP);
@@ -17,8 +18,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type epsilon_gradient(epsilon_gradientSEXP);
     Rcpp::traits::input_parameter< double >::type epsilon_explore_set(epsilon_explore_setSEXP);
     Rcpp::traits::input_parameter< double >::type epsilon_initial_step_size(epsilon_initial_step_sizeSEXP);
-    run_mogsa_cpp(fn, starting_point, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_point, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size));
+    return rcpp_result_gen;
 END_RCPP
 }
 

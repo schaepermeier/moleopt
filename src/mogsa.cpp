@@ -14,16 +14,50 @@ optim_fn as_vector_fn(Function fn) {
 }
 
 // [[Rcpp::export]]
-void run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper,
+List run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   
-  run_mogsa(as_vector_fn(fn),
+  auto local_sets = run_mogsa(as_vector_fn(fn),
             as<double_vector>(starting_point),
             as<double_vector>(lower),
             as<double_vector>(upper),
             epsilon_gradient,
             epsilon_explore_set,
             epsilon_initial_step_size);
+  
+  List return_values;
+  List sets;
+
+  double d = starting_point.size();
+  
+  NumericVector v;
+  
+  for (const auto& set : local_sets) {
+    List set_r;
+    
+    NumericMatrix dec_space(set.size(), d);
+    NumericMatrix obj_space(set.size(), (*(set.begin())).second.obj_space.size() );
+    int idx = 0;
+    
+    for (const auto& [key, value] : set) {
+      v = wrap(value.dec_space);
+      dec_space(idx,_) = v;
+      
+      v = wrap(value.obj_space);
+      obj_space(idx,_) = v;
+      
+      idx++;
+    }
+    
+    set_r["dec_space"] = dec_space;
+    set_r["obj_space"] = obj_space;
+    
+    sets.insert(sets.size(), set_r);
+  }
+  
+  return_values["sets"] = sets;
+
+  return return_values;
 }
 
 // double vector_length(NumericVector vector) {

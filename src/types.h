@@ -9,6 +9,7 @@ typedef std::function<std::vector<double>(std::vector<double>)> optim_fn;
 struct evaluated_point {
   double_vector dec_space;
   double_vector obj_space;
+  std::vector<double_vector> gradients;
   
   // bool operator<(const evaluated_point& rhs) const {
   //   int i = 0;

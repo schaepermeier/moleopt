@@ -93,12 +93,16 @@ evaluated_point descend_to_set(evaluated_point current_point) {
   return current_point;
 }
 
-evaluated_point explore_efficient_set(evaluated_point current_point, int objective) {
+std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   std::vector<double_vector> current_gradients = compute_gradients(current_point.dec_space);
 
   evaluated_point previous_point;
   evaluated_point next_point;
   double_vector set_direction;
+  
+  std::vector<evaluated_point> trace;
+  trace.push_back(current_point);
+  
   bool finished = false;
   
   while (!finished) {
@@ -120,23 +124,25 @@ evaluated_point explore_efficient_set(evaluated_point current_point, int objecti
       // successfully made step in set
       previous_point = current_point;
       current_point = next_point;
+      
+      trace.push_back(current_point);
     } else {
       if (dominates(next_point.obj_space, current_point.obj_space)) {
-        return next_point;
+        return {next_point, trace};
       } else {
-        return {};
+        return {{}, trace};
       }
-      // either hit single-objective optimum gone over ridge or some error
+      // either hit single-objective optimum, gone over ridge or some error
       finished = true;
     }
   }
   
   // empty vector if finished
   // current point if gone over ridge
-  return current_point;
+  return {{}, trace};
 }
 
-void run_mogsa(optim_fn f, double_vector starting_point, double_vector lower_bounds, double_vector upper_bounds,
+std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, double_vector starting_point, double_vector lower_bounds, double_vector upper_bounds,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   eps_gradient = epsilon_gradient;
   eps_explore_set = epsilon_explore_set;
@@ -144,6 +150,8 @@ void run_mogsa(optim_fn f, double_vector starting_point, double_vector lower_bou
   fn = f;
   lower = lower_bounds;
   upper = upper_bounds;
+  
+  std::vector<std::map<double, evaluated_point>> local_sets;
   
   evaluated_point current_point = {
     starting_point,
@@ -166,13 +174,22 @@ void run_mogsa(optim_fn f, double_vector starting_point, double_vector lower_bou
     for (auto& v : current_point.dec_space) std::cout << v << " "; std::cout << std::endl;
     std::cout << "Points left: " << points_to_explore.size() << std::endl;
     
+    std::map<double, evaluated_point> current_set;
+    
     for (int obj = 0; obj < 2; obj++) {
-      next_point = explore_efficient_set(current_point, obj);
+      auto [next_point, trace] = explore_efficient_set(current_point, obj);
       
       if (next_point.dec_space.size() != 0) {
         points_to_explore.push_back(next_point);
       }
+      
+      for (auto& eval_point : trace) {
+        current_set.insert(std::pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
+      }
     }
+    
+    local_sets.push_back(current_set);
   }
   
+  return local_sets;
 }

@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 run_mogsa_cpp <- function(fn, starting_point, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size) {
-    invisible(.Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_point, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size))
+    .Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_point, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size)
 }
 
