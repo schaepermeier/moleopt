@@ -170,20 +170,73 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, double_vect
     current_point = points_to_explore.back();
     points_to_explore.pop_back();
     
+    // Validate that chosen point does not belong to an already explored set
+    
+    bool already_explored = false;
+    
+    for (auto& set : local_sets) {
+      double lower_f1 = (*(set.begin())).second.obj_space[0];
+      double upper_f2 = (*(set.begin())).second.obj_space[1];
+      double upper_f1 = (*(set.rbegin())).second.obj_space[0];
+      double lower_f2 = (*(set.rbegin())).second.obj_space[1];
+      
+      if (current_point.obj_space[0] >= lower_f1 && 
+          current_point.obj_space[0] <= upper_f1 && 
+          current_point.obj_space[1] >= lower_f2 && 
+          current_point.obj_space[1] <= upper_f2) {
+        
+        std::map<double, evaluated_point>::iterator it_lower = set.lower_bound(current_point.obj_space[0]);
+
+        if ((it_lower != set.end()) && (it_lower != set.begin())) {
+          auto& right_neighbor = (*it_lower).second;
+          auto& left_neighbor = (*(--it_lower)).second;
+          
+          // std::cout << current_point.obj_space[0] << " " << current_point.obj_space[1] << std::endl;
+          // std::cout << left_neighbor.obj_space[0] << " " << left_neighbor.obj_space[1] << std::endl;
+          // std::cout << right_neighbor.obj_space[0] << " " << right_neighbor.obj_space[1] << std::endl;
+
+          if (current_point.obj_space[0] >= left_neighbor.obj_space[0] && 
+              current_point.obj_space[0] <= right_neighbor.obj_space[0] && 
+              current_point.obj_space[1] >= right_neighbor.obj_space[1] && 
+              current_point.obj_space[1] <= left_neighbor.obj_space[1]) {
+            
+            double norm_to_left = norm(current_point.dec_space - left_neighbor.dec_space);
+            double norm_to_right = norm(current_point.dec_space - right_neighbor.dec_space);
+            double norm_left_right = norm(left_neighbor.dec_space - right_neighbor.dec_space);
+            
+            // std::cout << norm_to_left << std::endl;
+            // std::cout << norm_to_right << std::endl;
+            // std::cout << norm_left_right << std::endl;
+            
+            if ((norm_to_left * norm_to_left + norm_to_right * norm_to_right) < (norm_left_right * norm_left_right)) {
+              std::cout << "IT'S A MATCH!" << std::endl;
+              set.insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
+              already_explored = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    if (already_explored) {
+      continue;
+    }
+    
     std::cout << "Exploring new set" << std::endl;
-    for (auto& v : current_point.dec_space) std::cout << v << " "; std::cout << std::endl;
+    for (const auto& v : current_point.dec_space) std::cout << v << " "; std::cout << std::endl;
     std::cout << "Points left: " << points_to_explore.size() << std::endl;
     
     std::map<double, evaluated_point> current_set;
     
     for (int obj = 0; obj < 2; obj++) {
-      auto [next_point, trace] = explore_efficient_set(current_point, obj);
+      const auto [next_point, trace] = explore_efficient_set(current_point, obj);
       
       if (next_point.dec_space.size() != 0) {
         points_to_explore.push_back(next_point);
       }
       
-      for (auto& eval_point : trace) {
+      for (const auto& eval_point : trace) {
         current_set.insert(std::pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
       }
     }
