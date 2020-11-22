@@ -28,6 +28,31 @@ std::vector<double_vector> rows_to_vectors(NumericMatrix m) {
 }
 
 // [[Rcpp::export]]
+LogicalVector nondominated(NumericMatrix m) {
+  int n_vectors = m.nrow();
+  
+  std::vector<double_vector> vectors = rows_to_vectors(m);
+  LogicalVector nondominated(n_vectors);
+  
+  vector<int> idx(n_vectors);
+  iota(idx.begin(), idx.end(), 0);
+  
+  std::stable_sort(idx.begin(), idx.end(), [&] (int i, int j) {return vectors[i] < vectors [j];});
+  
+  double best_f2 = vectors[idx[0]][1];
+  nondominated[idx[0]] = true;
+  
+  for (int i = 1; i < n_vectors; i++) {
+    if (vectors[idx[i]][1] < best_f2) {
+      best_f2 = vectors[idx[i]][1];
+      nondominated[idx[i]] = true;
+    }
+  }
+  
+  return nondominated;
+}
+
+// [[Rcpp::export]]
 List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   
