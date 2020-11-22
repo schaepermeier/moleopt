@@ -13,12 +13,26 @@ optim_fn as_vector_fn(Function fn) {
   return f;
 }
 
+std::vector<double_vector> rows_to_vectors(NumericMatrix m) {
+  std::vector<double_vector> vectors;
+  NumericVector row_vector;
+  
+  for (int i = 0; i < m.nrow(); i++) {
+    row_vector = m(i,_);
+    
+    double_vector v = as<double_vector>(row_vector);
+    vectors.push_back(v);
+  }
+  
+  return vectors;
+}
+
 // [[Rcpp::export]]
-List run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lower, NumericVector upper,
+List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   
   auto local_sets = run_mogsa(as_vector_fn(fn),
-            as<double_vector>(starting_point),
+            rows_to_vectors(starting_points),
             as<double_vector>(lower),
             as<double_vector>(upper),
             epsilon_gradient,
@@ -28,7 +42,7 @@ List run_mogsa_cpp(Function fn, NumericVector starting_point, NumericVector lowe
   List return_values;
   List sets;
 
-  double d = starting_point.size();
+  double d = starting_points.ncol();
   
   NumericVector v;
   
