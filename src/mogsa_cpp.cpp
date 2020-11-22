@@ -45,7 +45,7 @@ std::vector<double_vector> compute_gradients(const double_vector& point) {
   return gradients;
 }
 
-double_vector compute_descent_direction(std::vector<double_vector> gradients) {
+double_vector compute_descent_direction(const std::vector<double_vector>& gradients) {
   // TODO take lower, upper into account!
   int n_objectives = gradients.size();
   

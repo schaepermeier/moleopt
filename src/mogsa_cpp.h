@@ -6,7 +6,7 @@
 
 std::vector<double_vector> compute_gradients(const double_vector& point);
 
-double_vector compute_descent_direction(std::vector<double_vector> gradients);
+double_vector compute_descent_direction(const std::vector<double_vector>& gradients);
 
 evaluated_point descend_to_set(evaluated_point current_point);
 
