@@ -21,6 +21,7 @@ double norm(const double_vector& vector);
 double_vector normalize(const double_vector& vector);
 
 bool dominates(const double_vector& a, const double_vector& b);
+bool strictly_dominates(const double_vector& a, const double_vector& b);
 double_vector ensure_boundary(const double_vector& vector, const double_vector& lower, const double_vector& upper);
 
 #endif

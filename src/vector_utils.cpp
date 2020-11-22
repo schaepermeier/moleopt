@@ -62,6 +62,18 @@ bool dominates(const double_vector& a, const double_vector& b) {
   return a_not_worse && a_strictly_better;
 }
 
+bool strictly_dominates(const double_vector& a, const double_vector& b) {
+  assert(a.size() == b.size());
+  
+  bool a_strictly_better = true;
+  
+  for (int i = 0; i < a.size(); i++) {
+    a_strictly_better = a_strictly_better && (a[i] < b[i]);
+  }
+  
+  return a_strictly_better;
+}
+
 double norm(const double_vector& vector) {
   double square_norm = 0;
   
