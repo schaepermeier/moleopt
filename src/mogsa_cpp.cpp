@@ -117,9 +117,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
     next_point.dec_space = ensure_boundary(next_point.dec_space, lower, upper);
     next_point.obj_space = fn(next_point.dec_space);
     next_point = descend_to_set(next_point);
-    
-    next_point.obj_space = fn(next_point.dec_space);
-    
+
     if (next_point.obj_space[objective] < current_point.obj_space[objective] && !strictly_dominates(next_point.obj_space, current_point.obj_space)) {
       // successfully made step in set
       previous_point = current_point;
