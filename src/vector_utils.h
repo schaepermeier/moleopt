@@ -18,6 +18,7 @@ double_vector operator-(const double_vector& a);
 /* General Utils */
 
 double norm(const double_vector& vector);
+double dot(const double_vector& a, const double_vector& b);
 double_vector normalize(const double_vector& vector);
 
 bool dominates(const double_vector& a, const double_vector& b);

@@ -84,6 +84,18 @@ double norm(const double_vector& vector) {
   return sqrt(square_norm);
 }
 
+double dot(const double_vector& a, const double_vector& b) {
+  assert(a.size() == b.size());
+  
+  double result = 0;
+  
+  for (int i = 0; i < a.size(); i++) {
+    result += a[i] * b[i];
+  }
+  
+  return result;
+}
+
 double_vector ensure_boundary(const double_vector& vector, const double_vector& lower, const double_vector& upper) {
   assert(vector.size() == lower.size());
   assert(vector.size() == upper.size());
