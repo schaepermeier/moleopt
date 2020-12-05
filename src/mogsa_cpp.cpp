@@ -24,7 +24,6 @@ std::vector<double_vector> compute_gradients(const double_vector& point) {
     double_vector lower_d(point);
     double_vector upper_d(point);
     
-    // TODO Ensure in-bounds
     lower_d[iter_d] = lower_d[iter_d] - eps_gradient;
     upper_d[iter_d] = upper_d[iter_d] + eps_gradient;
   
@@ -59,37 +58,141 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
 
 evaluated_point descend_to_set(evaluated_point current_point) {
   
-  double eps_step = eps_initial_step_size;
+  bool converged = false;
+  int iters = 0;
   
-  std::vector<double_vector> current_gradients = compute_gradients(current_point.dec_space);
-  double_vector descent_direction = compute_descent_direction(current_gradients);
-  
-  int successes = 0;
-  
-  while (eps_step >= eps_initial_step_size) {
-    double_vector next_point = current_point.dec_space + eps_step * normalize(descent_direction);
-    next_point = ensure_boundary(next_point, lower, upper);
-    double_vector next_fn = fn(next_point);
+  while (!converged) {
+    iters++;
+    std::vector<double_vector> current_gradients = compute_gradients(current_point.dec_space);
+    double_vector descent_direction = compute_descent_direction(current_gradients);
     
-    if (dominates(next_fn, current_point.obj_space)) {
-      current_point.dec_space = next_point;
-      current_point.obj_space = next_fn;
-      eps_step *= 2;
+    double eps_step = eps_initial_step_size;
+    
+    std::pair<double, evaluated_point> a = {0, current_point};
+    std::pair<double, evaluated_point> b = {0, current_point};
+    std::pair<double, evaluated_point> c = {0, current_point};
+    
+    evaluated_point new_point;
+    
+    bool descending_path = true;
+    
+    while (descending_path) {
+      new_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
+      new_point.obj_space = fn(new_point.dec_space);
       
-      successes++;
-    } else {
-      if (successes == 0) {
-        eps_step /= 2;
+      a = b;
+      b = c;
+      c = {eps_step, new_point};
+      
+      if (dominates(c.second.obj_space, b.second.obj_space)) {
+        eps_step *= 2;
       } else {
-        current_gradients = compute_gradients(current_point.dec_space);
-        descent_direction = compute_descent_direction(current_gradients);
-        eps_step = eps_initial_step_size;
-        
-        successes = 0;
+        descending_path = false;
+
+        if (eps_step <= eps_initial_step_size) {
+          converged = true;
+        }
       }
     }
+    
+    if (a.second.dec_space != b.second.dec_space && b.second.dec_space != c.second.dec_space) {
+      // Lagrange interpolation (i.e. interpolation w/ quadratic surrogate)
+      // Execute until convergence < eps_initial_step_size
+
+      // determine new point for each objective
+      // then take the minimum
+
+      std::pair<double, evaluated_point> d;
+      double previous_d = 1;
+
+      // while (d.first - previous_d > 1e-6 || d.first - previous_d < -1e-6) {
+        previous_d = d.first;
+        d.first = 0;
+
+        for (int objective = 0; objective < a.second.obj_space.size(); objective++) {
+          double obj_d = 0.5 * (
+            (b.first * b.first - c.first * c.first) * a.second.obj_space[objective] +
+            (c.first * c.first - a.first * a.first) * b.second.obj_space[objective] +
+            (a.first * a.first - b.first * b.first) * c.second.obj_space[objective]
+          ) / (
+            (b.first - c.first) * a.second.obj_space[objective] +
+            (c.first - a.first) * b.second.obj_space[objective] +
+            (a.first - b.first) * c.second.obj_space[objective]
+          );
+
+          if (objective == 0 || obj_d < d.first) {
+            d.first = obj_d;
+          }
+        }
+
+        d.second.dec_space = ensure_boundary(current_point.dec_space + d.first * normalize(descent_direction), lower, upper);
+        d.second.obj_space = fn(d.second.dec_space);
+
+        // std::cout << "a: " << a.first;
+        // std::cout << ", b: " << b.first;
+        // std::cout << ", c: " << c.first;
+        // std::cout << ", d: " << d.first;
+        // std::cout << std::endl;
+
+        if (dominates(d.second.obj_space, b.second.obj_space)) {
+          b = d;
+        }
+
+        // if (a.first < d.first < b.first) {
+        //   if (dominates(b.second.obj_space, d.second.obj_space)) {
+        //     a = d;
+        //   } else {
+        //     c = b;
+        //     b = d;
+        //   }
+        // } else {
+        //   if (dominates(b.second.obj_space, d.second.obj_space)) {
+        //     c = d;
+        //   } else {
+        //     a = b;
+        //     b = d;
+        //   }
+        // }
+      // }
+
+    }
+    
+    current_point = b.second;
   }
   
+  // std::vector<double_vector> current_gradients = compute_gradients(current_point.dec_space);
+  // double_vector descent_direction = compute_descent_direction(current_gradients);
+  // 
+  // double eps_step = eps_initial_step_size;
+  // 
+  // int successes = 0;
+  // 
+  // while (eps_step >= eps_initial_step_size) {
+  //   double_vector next_point = current_point.dec_space + eps_step * normalize(descent_direction);
+  //   next_point = ensure_boundary(next_point, lower, upper);
+  //   double_vector next_fn = fn(next_point);
+  // 
+  //   if (dominates(next_fn, current_point.obj_space)) {
+  //     current_point.dec_space = next_point;
+  //     current_point.obj_space = next_fn;
+  //     eps_step *= 2;
+  // 
+  //     successes++;
+  //   } else {
+  //     if (successes == 0) {
+  //       eps_step /= 2;
+  //     } else {
+  //       current_gradients = compute_gradients(current_point.dec_space);
+  //       descent_direction = compute_descent_direction(current_gradients);
+  //       eps_step = eps_initial_step_size;
+  // 
+  //       successes = 0;
+  //     }
+  //   }
+  // }
+  
+  // std::cout << iters << std::endl;
+
   return current_point;
 }
 
