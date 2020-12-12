@@ -13,6 +13,7 @@ double_vector operator-(const double_vector& a, const double_vector& b);
 double_vector operator*(const double_vector& a, double scalar);
 double_vector operator*(double scalar, const double_vector& a);
 double_vector operator/(const double_vector& a, double divisor);
+double_vector operator/(double a, const double_vector& divisor);
 double_vector operator-(const double_vector& a);
 
 /* General Utils */

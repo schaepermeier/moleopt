@@ -48,6 +48,16 @@ double_vector operator/(const double_vector& a, double divisor) {
   return result;
 }
 
+double_vector operator/(double a, const double_vector& divisor) {
+  assert(divisor != 0);
+  
+  double_vector result;
+  result.reserve(divisor.size());
+  
+  std::transform(divisor.begin(), divisor.end(), std::back_inserter(result), [&](double v){return a / v;});
+  return result;
+}
+
 bool dominates(const double_vector& a, const double_vector& b) {
   assert(a.size() == b.size());
   
