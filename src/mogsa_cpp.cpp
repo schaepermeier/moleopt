@@ -27,8 +27,6 @@ double random_double() {
   return distribution(generator);
 }
 
-double inf = std::numeric_limits<double>::infinity();
-
 // std::vector<double_vector> compute_gradients_stochastic(const evaluated_point& point, int n_samples) {
 //   std::vector<double_vector> gradients(2);
 //   int d = point.dec_space.size();
@@ -69,11 +67,10 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
   std::vector<double_vector> gradients(2);
   int d = point.dec_space.size();
   
-  bool twosided = true;
+  bool twosided = false;
   
   // Initialize gradients
 
-  // TODO Arbitrary amount of gradients
   gradients[0] = double_vector(d, 0);
   gradients[1] = double_vector(d, 0);
   
@@ -123,10 +120,6 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
     
     double length = norm(lower_d - upper_d);
     
-    if (length == 0) {
-      std::cout << "HELP" << std::endl;
-    }
-    
     double_vector gradient_components = (fn_upper - fn_lower) / length;
     
     gradients[0][iter_d] = gradient_components[0];
@@ -137,7 +130,6 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
 }
 
 double_vector compute_descent_direction(const std::vector<double_vector>& gradients) {
-  // TODO take lower, upper into account!
   int n_objectives = gradients.size();
   
   if (n_objectives != 2) {
@@ -148,120 +140,114 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
   return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
 }
 
-evaluated_point descend_to_set(evaluated_point current_point) {
-  
-  bool converged = false;
+// std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_point) {
+// 
+//   bool converged = false;
+//   int iters = 0;
+// 
+//   std::string status;
+// 
+//   double eps_step = eps_initial_step_size;
+// 
+//   evaluated_point gradient_point = current_point;
+//   evaluated_point current_best = current_point;
+//   evaluated_point next_point;
+// 
+//   std::vector<double_vector> current_gradients = compute_gradients(current_point);
+//   double_vector descent_direction = compute_descent_direction(current_gradients);
+// 
+//   while (!converged) {
+//     iters++;
+// 
+//     next_point.dec_space = ensure_boundary(gradient_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
+//     next_point.obj_space = fn(next_point.dec_space);
+// 
+//     if (dominates(next_point.obj_space, current_best.obj_space)) {
+//       eps_step *= 2;
+// 
+//       current_best = next_point;
+//     } else {
+//       if (gradient_point.dec_space != current_best.dec_space) {
+//         gradient_point = current_best;
+// 
+//         current_gradients = compute_gradients(gradient_point);
+//         descent_direction = compute_descent_direction(current_gradients);
+//       }
+// 
+//       if (eps_step <= eps_initial_step_size) {
+//         converged = true;
+// 
+//         // if (dominates(current_best.obj_space, next_point.obj_space)) {
+//         if (dominates(current_best.obj_space, next_point.obj_space) ||
+//             norm(descent_direction) < 1e-2) {
+//           status = "regular";
+//         } else {
+//           status = "degenerate";
+//         }
+//       }
+// 
+//       eps_step /= 2;
+//     }
+//   }
+// 
+//   // std::cout << iters << std::endl;
+// 
+//   return {current_best, status};
+// }
+
+std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_point) {
+
   int iters = 0;
-  
-  while (!converged) {
+
+  std::string status = "regular";
+
+  double eps_step = eps_initial_step_size;
+
+  evaluated_point next_point;
+
+  std::vector<double_vector> next_gradients;
+  double_vector next_descent_direction;
+
+  std::vector<double_vector> gradients = compute_gradients(current_point);
+  double_vector descent_direction = compute_descent_direction(gradients);
+
+  double smoothing_factor = 0;
+
+  while (eps_step >= eps_initial_step_size) {
     iters++;
-    std::vector<double_vector> current_gradients = compute_gradients(current_point);
-    double_vector descent_direction = compute_descent_direction(current_gradients);
-    
-    double eps_step = eps_initial_step_size;
-    
-    std::pair<double, evaluated_point> a = {0, current_point};
-    std::pair<double, evaluated_point> b = {0, current_point};
-    std::pair<double, evaluated_point> c = {0, current_point};
-    
-    evaluated_point new_point;
-    
-    bool descending_path = true;
-    
-    while (descending_path) {
-      new_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
-      new_point.obj_space = fn(new_point.dec_space);
-      
-      a = b;
-      b = c;
-      c = {eps_step, new_point};
-      
-      if (dominates(c.second.obj_space, b.second.obj_space)) {
-        eps_step *= 2;
-      } else {
-        descending_path = false;
 
-        if (eps_step <= eps_initial_step_size) {
-          converged = true;
-        }
-      }
+    next_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
+    next_point.obj_space = fn(next_point.dec_space);
+
+    next_gradients = compute_gradients(next_point);
+    next_descent_direction = compute_descent_direction(next_gradients);
+
+    double factor_eps_step = 1 + dot(next_descent_direction, descent_direction) / (norm(next_descent_direction) * norm(descent_direction));
+
+    if (factor_eps_step < 0.2) {
+      factor_eps_step = 0.2;
     }
     
-    if (a.second.dec_space != b.second.dec_space && b.second.dec_space != c.second.dec_space) {
-      // Lagrange interpolation (i.e. interpolation w/ quadratic surrogate)
-      // Execute until convergence < eps_initial_step_size
+    eps_step *= factor_eps_step;
 
-      // determine new point for each objective
-      // then take the minimum
-
-      std::pair<double, evaluated_point> d;
-      double previous_d = 1;
-
-      // while (d.first - previous_d > 1e-6 || d.first - previous_d < -1e-6) {
-        previous_d = d.first;
-        d.first = inf;
-
-        for (int objective = 0; objective < a.second.obj_space.size(); objective++) {
-          double divisor = ((b.first - c.first) * a.second.obj_space[objective] +
-                            (c.first - a.first) * b.second.obj_space[objective] +
-                            (a.first - b.first) * c.second.obj_space[objective]);
-          
-          double dividend = ((b.first * b.first - c.first * c.first) * a.second.obj_space[objective] +
-                            (c.first * c.first - a.first * a.first) * b.second.obj_space[objective] +
-                            (a.first * a.first - b.first * b.first) * c.second.obj_space[objective]);
-          
-          if (divisor == 0) {
-            continue;
-          }
-          
-          double obj_d = 0.5 * dividend / divisor;
-
-          if (obj_d < d.first) {
-            d.first = obj_d;
-          }
-        }
-
-        if (d.first != inf) {
-          d.second.dec_space = ensure_boundary(current_point.dec_space + d.first * normalize(descent_direction), lower, upper);
-          d.second.obj_space = fn(d.second.dec_space);
-          
-          // std::cout << "a: " << a.first;
-          // std::cout << ", b: " << b.first;
-          // std::cout << ", c: " << c.first;
-          // std::cout << ", d: " << d.first;
-          // std::cout << std::endl;
-          
-          if (dominates(d.second.obj_space, b.second.obj_space)) {
-            b = d;
-          }
-        }
-
-        // if (a.first < d.first < b.first) {
-        //   if (dominates(b.second.obj_space, d.second.obj_space)) {
-        //     a = d;
-        //   } else {
-        //     c = b;
-        //     b = d;
-        //   }
-        // } else {
-        //   if (dominates(b.second.obj_space, d.second.obj_space)) {
-        //     c = d;
-        //   } else {
-        //     a = b;
-        //     b = d;
-        //   }
-        // }
-      // }
-
+    for (int i = 0; i < gradients.size(); i++) {
+      gradients[i] = smoothing_factor * gradients[i] + (1 - smoothing_factor) * next_gradients[i];
     }
+
+    descent_direction = compute_descent_direction(gradients);
     
-    current_point = b.second;
+    if (!dominates(current_point.obj_space, next_point.obj_space)) {
+      current_point.dec_space = next_point.dec_space;
+      current_point.obj_space = next_point.obj_space;
+    }
+
   }
-  
-  // std::cout << iters << std::endl;
 
-  return current_point;
+  std::cout << iters << std::endl;
+
+  return {current_point, status};
 }
+
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   std::vector<double_vector> current_gradients = compute_gradients(current_point);
@@ -295,15 +281,16 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
     next_point.dec_space = ensure_boundary(next_point.dec_space, lower, upper);
     next_point.obj_space = fn(next_point.dec_space);
     
-    while (adjusted_explore_set > eps_gradient && dominates(current_point.obj_space, next_point.obj_space)) {
+    while (adjusted_explore_set > eps_initial_step_size && dominates(current_point.obj_space, next_point.obj_space)) {
       adjusted_explore_set /= 2;
       next_point.dec_space = current_point.dec_space + adjusted_explore_set * set_direction;
       next_point.dec_space = ensure_boundary(next_point.dec_space, lower, upper);
       next_point.obj_space = fn(next_point.dec_space);
     }
     
-    next_point = descend_to_set(next_point);
-    
+    auto [descent_point, descent_status] = descend_to_set(next_point);
+    next_point = descent_point;
+
     if (norm(current_point.dec_space - next_point.dec_space) < 0.1 * eps_explore_set) {
       log("very short step");
     }
@@ -315,7 +302,8 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
       
       trace.push_back(current_point);
     } else {
-      if (strictly_dominates(next_point.obj_space, current_point.obj_space)) {
+      if (strictly_dominates(next_point.obj_space, current_point.obj_space) &&
+          descent_status != "degenerate") {
         return {next_point, trace};
       } else if (next_point.obj_space[objective] >= current_point.obj_space[objective]) {
         log("SO Optimum reached");
@@ -349,20 +337,19 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
       starting_point,
       fn(starting_point)
     };
-    
-    // std::vector<double_vector> current_gradients_fd = compute_gradients(current_point);
-    // for (const auto& v : current_gradients_fd[0]) std::cout << v << " "; std::cout << std::endl;
-    // 
-    // std::vector<double_vector> current_gradients_stoch = compute_gradients_stochastic(current_point, 20);
-    // for (const auto& v : current_gradients_stoch[0]) std::cout << v << " "; std::cout << std::endl;
-    
+
     evaluated_point next_point;
     
     std::vector<evaluated_point> points_to_explore;
     
-    current_point = descend_to_set(current_point);
+    auto [descent_point, descent_status] = descend_to_set(current_point);
+    current_point = descent_point;
     
-    points_to_explore.push_back(current_point);
+    if (descent_status != "degenerate") {
+      points_to_explore.push_back(current_point);
+    } else {
+      std::cout << "Skipping: Degenerate locally efficient point" << std::endl;
+    }
     
     while(points_to_explore.size() > 0) {
       current_point = points_to_explore.back();
@@ -388,11 +375,7 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
           if ((it_lower != set.end()) && (it_lower != set.begin())) {
             auto& right_neighbor = (*it_lower).second;
             auto& left_neighbor = (*(--it_lower)).second;
-            
-            // std::cout << current_point.obj_space[0] << " " << current_point.obj_space[1] << std::endl;
-            // std::cout << left_neighbor.obj_space[0] << " " << left_neighbor.obj_space[1] << std::endl;
-            // std::cout << right_neighbor.obj_space[0] << " " << right_neighbor.obj_space[1] << std::endl;
-  
+
             if (current_point.obj_space[0] >= left_neighbor.obj_space[0] && 
                 current_point.obj_space[0] <= right_neighbor.obj_space[0] && 
                 current_point.obj_space[1] >= right_neighbor.obj_space[1] && 
@@ -401,13 +384,9 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
               double norm_to_left = norm(current_point.dec_space - left_neighbor.dec_space);
               double norm_to_right = norm(current_point.dec_space - right_neighbor.dec_space);
               double norm_left_right = norm(left_neighbor.dec_space - right_neighbor.dec_space);
-              
-              // std::cout << norm_to_left << std::endl;
-              // std::cout << norm_to_right << std::endl;
-              // std::cout << norm_left_right << std::endl;
-              
-              // if ((norm_to_left * norm_to_left + norm_to_right * norm_to_right) < (norm_left_right * norm_left_right)) {
-              if (norm_to_left < norm_left_right && norm_to_right < norm_left_right) {
+
+              if ((norm_to_left * norm_to_left + norm_to_right * norm_to_right) <= (norm_left_right * norm_left_right + eps_initial_step_size)) {
+              // if (norm_to_left < norm_left_right && norm_to_right < norm_left_right) {
                 set.insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
                 already_explored = true;
                 break;
