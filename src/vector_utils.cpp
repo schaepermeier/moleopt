@@ -84,14 +84,18 @@ bool strictly_dominates(const double_vector& a, const double_vector& b) {
   return a_strictly_better;
 }
 
-double norm(const double_vector& vector) {
+double square_norm(const double_vector& vector) {
   double square_norm = 0;
   
   for (double value : vector) {
     square_norm += value * value;
   }
   
-  return sqrt(square_norm);
+  return square_norm;
+}
+
+double norm(const double_vector& vector) {
+  return sqrt(square_norm(vector));
 }
 
 double dot(const double_vector& a, const double_vector& b) {
