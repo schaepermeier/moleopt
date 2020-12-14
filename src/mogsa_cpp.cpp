@@ -2,6 +2,9 @@
 #include <iostream>
 #include <random>
 #include <set>
+#include <string>
+
+using namespace std;
 
 double_vector lower;
 double_vector upper;
@@ -18,6 +21,16 @@ void log(std::string message) {
   if (verbose) {
     std::cout << message << std::endl;
   }
+}
+
+void print(std::string message) {
+  std::cout << message << std::endl;
+}
+
+void print_vector(double_vector v) {
+  for (const auto& el : v) std::cout << el << " ";
+  
+  std::cout << std::endl;
 }
 
 std::default_random_engine generator;
@@ -47,7 +60,7 @@ double random_double() {
 // 
 //     perturbation = normalize(perturbation);
 //     
-//     // for (const auto& v : perturbation) std::cout << v << " "; std::cout << std::endl;
+//     // print_vector(perturbation);
 //     
 //     double_vector to_evaluate = ensure_boundary(point.dec_space + eps_gradient * perturbation, lower, upper);
 //     double_vector delta_obj = (fn(to_evaluate) - point.obj_space);
@@ -133,7 +146,7 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
   int n_objectives = gradients.size();
   
   if (n_objectives != 2) {
-    std::cout << "Cannot compute descent direction for n_objectives != 2" << std::endl;
+    print("Cannot compute descent direction for n_objectives != 2");
     return double_vector();
   }
   
@@ -190,7 +203,7 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
 //     }
 //   }
 // 
-//   // std::cout << iters << std::endl;
+//   // print(to_string(iters));
 // 
 //   return {current_best, status};
 // }
@@ -243,7 +256,7 @@ std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_
 
   }
 
-  std::cout << iters << std::endl;
+  print(to_string(iters));
 
   return {current_point, status};
 }
@@ -321,7 +334,8 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
   return {{}, trace};
 }
 
-std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
+std::tuple<std::vector<std::map<double, evaluated_point>>,
+           std::vector<std::tuple<int, int>>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   eps_gradient = epsilon_gradient;
   eps_explore_set = epsilon_explore_set;
@@ -331,6 +345,7 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
   upper = upper_bounds;
   
   std::vector<std::map<double, evaluated_point>> local_sets;
+  std::vector<std::tuple<int, int>> set_transitions;
   
   for (double_vector starting_point : starting_points) {
     evaluated_point current_point = {
@@ -340,26 +355,30 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
 
     evaluated_point next_point;
     
-    std::vector<evaluated_point> points_to_explore;
+    std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
     auto [descent_point, descent_status] = descend_to_set(current_point);
     current_point = descent_point;
     
     if (descent_status != "degenerate") {
-      points_to_explore.push_back(current_point);
+      points_to_explore.push_back({current_point, -1});
     } else {
-      std::cout << "Skipping: Degenerate locally efficient point" << std::endl;
+      print("Skipping: Degenerate locally efficient point");
     }
     
     while(points_to_explore.size() > 0) {
-      current_point = points_to_explore.back();
+      auto [point_to_explore, origin_set_id] = points_to_explore.back();
+      current_point = point_to_explore;
       points_to_explore.pop_back();
       
       // Validate that chosen point does not belong to an already explored set
       
       bool already_explored = false;
+      int containing_set = 0;
       
       for (auto& set : local_sets) {
+        containing_set++;
+        
         double lower_f1 = (*(set.begin())).second.obj_space[0];
         double upper_f2 = (*(set.begin())).second.obj_space[1];
         double upper_f1 = (*(set.rbegin())).second.obj_space[0];
@@ -397,21 +416,24 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
       }
       
       if (already_explored) {
-        std::cout << "Skipping point, set already explored" << std::endl;
+        set_transitions.push_back({origin_set_id, containing_set});
+        print("Skipping: Set already explored");
         continue;
       }
       
-      std::cout << "Exploring new set" << std::endl;
-      for (const auto& v : current_point.dec_space) std::cout << v << " "; std::cout << std::endl;
-      std::cout << "Points left: " << points_to_explore.size() << std::endl;
+      print("Exploring new set");
+      print_vector(current_point.dec_space);
+      print("Points left: " + to_string(points_to_explore.size()));
       
       std::map<double, evaluated_point> current_set;
+      int current_set_id = local_sets.size() + 1;
       
       for (int obj = 0; obj < 2; obj++) {
         const auto [next_point, trace] = explore_efficient_set(current_point, obj);
         
         if (next_point.dec_space.size() != 0) {
-          points_to_explore.push_back(next_point);
+          set_transitions.push_back({origin_set_id, current_set_id});
+          points_to_explore.push_back({next_point, current_set_id});
         }
         
         for (const auto& eval_point : trace) {
@@ -423,5 +445,5 @@ std::vector<std::map<double, evaluated_point>> run_mogsa(optim_fn f, std::vector
     }
   }
   
-  return local_sets;
+  return {local_sets, set_transitions};
 }

@@ -56,7 +56,7 @@ LogicalVector nondominated(NumericMatrix m) {
 List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
   
-  auto local_sets = run_mogsa(as_vector_fn(fn),
+  auto [local_sets, set_transitions] = run_mogsa(as_vector_fn(fn),
             rows_to_vectors(starting_points),
             as<double_vector>(lower),
             as<double_vector>(upper),
@@ -94,7 +94,19 @@ List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector low
     sets.insert(sets.size(), set_r);
   }
   
+  NumericMatrix transitions(set_transitions.size(), 2);
+  
+  int idx = 0;
+  
+  for (const auto& [from_id, to_id] : set_transitions) {
+    transitions(idx, 0) = from_id;
+    transitions(idx, 1) = to_id;
+    
+    idx++;
+  }
+  
   return_values["sets"] = sets;
+  return_values["transitions"] = transitions;
 
   return return_values;
 }
