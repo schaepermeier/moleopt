@@ -224,7 +224,7 @@ std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_
   std::vector<double_vector> gradients = compute_gradients(current_point);
   double_vector descent_direction = compute_descent_direction(gradients);
 
-  double smoothing_factor = 0;
+  double smoothing_factor = 0.8;
 
   while (eps_step >= eps_initial_step_size) {
     iters++;
@@ -322,6 +322,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
         log("SO Optimum reached");
         return {{}, trace};
       } else {
+        print("Something else lol");
         return {{}, trace};
       }
       // either hit single-objective optimum, gone over ridge or some error
@@ -347,7 +348,12 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
   std::vector<std::map<double, evaluated_point>> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
   
+  int starting_points_done = 0;
+  
   for (double_vector starting_point : starting_points) {
+    starting_points_done++;
+    print("Starting point No. " + to_string(starting_points_done));
+    
     evaluated_point current_point = {
       starting_point,
       fn(starting_point)
