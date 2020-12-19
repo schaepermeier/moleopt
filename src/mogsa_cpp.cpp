@@ -3,6 +3,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -149,6 +150,15 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
     print("Cannot compute descent direction for n_objectives != 2");
     return double_vector();
   }
+  
+  // Local HV Improvement (not nice when objectives very differently scaled):
+
+  // double_vector mog = normalize(gradients[0]) + normalize(gradients[1]);
+  // mog = -normalize(mog) * dot(normalize(mog), gradients[0]) * dot(normalize(mog), gradients[1]);
+  // 
+  // return mog;
+  
+  // Conventional Definition:
   
   return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
 }
