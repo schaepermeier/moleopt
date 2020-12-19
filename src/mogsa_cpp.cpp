@@ -434,11 +434,12 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
       std::map<double, evaluated_point> current_set;
       int current_set_id = local_sets.size() + 1;
       
+      set_transitions.push_back({origin_set_id, current_set_id});
+      
       for (int obj = 0; obj < 2; obj++) {
         const auto [next_point, trace] = explore_efficient_set(current_point, obj);
         
         if (next_point.dec_space.size() != 0) {
-          set_transitions.push_back({origin_set_id, current_set_id});
           points_to_explore.push_back({next_point, current_set_id});
         }
         
