@@ -170,6 +170,9 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
 }
 
 evaluated_point descend_to_set(evaluated_point current_point) {
+  double factor_eps_step = 2;
+  double factor_offset = 1;
+  
   double eps_step = eps_initial_step_size + 1;
   
   evaluated_point trial_point;
@@ -185,13 +188,11 @@ evaluated_point descend_to_set(evaluated_point current_point) {
       dot(-gradients[1], normalize(descent_direction))
     };
     
-    print_vector(offsets);
-    
-    double_vector ref_point_obj = current_point.obj_space + offsets;
+    double_vector ref_point_obj = current_point.obj_space + factor_offset * offsets;
 
     bool improving = true;
-    double best_improvement = sqrt(offsets[0]) * sqrt(offsets[1]);
-    evaluated_point best_point = current_point;
+    double baseline_improvement = sqrt(offsets[0]) * sqrt(offsets[1]);
+    evaluated_point next_point = current_point;
     
     while (improving) {
       trial_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
@@ -201,16 +202,15 @@ evaluated_point descend_to_set(evaluated_point current_point) {
       double improvement_f2 = max(0.0, ref_point_obj[1] - trial_point.obj_space[1]);
       double imp = sqrt(improvement_f1) * sqrt(improvement_f2);
       
-      if (imp > best_improvement) {
-        best_improvement = imp;
-        best_point = trial_point;
-        eps_step *= 2;
+      if (imp > (factor_offset + 0.1 * eps_step) * baseline_improvement) {
+        next_point = trial_point;
+        eps_step *= factor_eps_step;
       } else {
         improving = false;
       }
     }
     
-    current_point = best_point;
+    current_point = next_point;
   }
   
   return current_point;
