@@ -13,6 +13,7 @@ double_vector upper;
 double eps_gradient;
 double eps_explore_set;
 double eps_initial_step_size;
+double max_explore_set;
 
 optim_fn fn;
 
@@ -26,6 +27,10 @@ void log(std::string message) {
 
 void print(std::string message) {
   std::cout << message << std::endl;
+}
+
+void print(double a) {
+  std::cout << a << std::endl;
 }
 
 void print_vector(double_vector v) {
@@ -81,7 +86,7 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
   std::vector<double_vector> gradients(2);
   int d = point.dec_space.size();
   
-  bool twosided = false;
+  bool twosided = true;
   
   // Initialize gradients
 
@@ -347,10 +352,12 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
 
 std::tuple<std::vector<std::map<double, evaluated_point>>,
            std::vector<std::tuple<int, int>>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
-               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
+               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double maximum_explore_set) {
   eps_gradient = epsilon_gradient;
   eps_explore_set = epsilon_explore_set;
   eps_initial_step_size = epsilon_initial_step_size;
+  max_explore_set = maximum_explore_set;
+  
   fn = f;
   lower = lower_bounds;
   upper = upper_bounds;
