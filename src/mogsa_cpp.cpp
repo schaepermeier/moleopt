@@ -380,15 +380,11 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     
     std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
-    auto [descent_point, descent_status] = descend_to_set(current_point);
+    auto descent_point = descend_to_set(current_point);
     current_point = descent_point;
     
-    if (descent_status != "degenerate") {
-      points_to_explore.push_back({current_point, -1});
-    } else {
-      print("Skipping: Degenerate locally efficient point");
-    }
-    
+    points_to_explore.push_back({current_point, -1});
+
     while(points_to_explore.size() > 0) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
       current_point = point_to_explore;
