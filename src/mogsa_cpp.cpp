@@ -290,7 +290,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
   bool finished = false;
   
   double adjusted_explore_set = eps_explore_set;
-  
+
   while (!finished) {
     if (previous_point.dec_space.size() == 0) {
       // estimate direction using single-objective gradient
@@ -300,45 +300,51 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
       set_direction = normalize(current_point.dec_space - previous_point.dec_space);
     }
     
-    adjusted_explore_set *= 2;
-    if (adjusted_explore_set > eps_explore_set) {
-      adjusted_explore_set = eps_explore_set;
-    }
-    
     next_point.dec_space = current_point.dec_space + adjusted_explore_set * set_direction;
     next_point.dec_space = ensure_boundary(next_point.dec_space, lower, upper);
     next_point.obj_space = fn(next_point.dec_space);
     
-    while (adjusted_explore_set > eps_initial_step_size && dominates(current_point.obj_space, next_point.obj_space)) {
+    while (adjusted_explore_set > eps_explore_set && dominates(current_point.obj_space, next_point.obj_space)) {
       adjusted_explore_set /= 2;
       next_point.dec_space = current_point.dec_space + adjusted_explore_set * set_direction;
       next_point.dec_space = ensure_boundary(next_point.dec_space, lower, upper);
       next_point.obj_space = fn(next_point.dec_space);
     }
     
-    auto [descent_point, descent_status] = descend_to_set(next_point);
+    auto descent_point = descend_to_set(next_point);
+    double delta = norm(descent_point.dec_space - next_point.dec_space);
+    
+    if (!dominates(descent_point.obj_space, current_point.obj_space) &&
+        adjusted_explore_set > eps_explore_set &&
+        delta >= adjusted_explore_set) {
+      adjusted_explore_set /= 2;
+      continue;
+    } else if (delta <= 0.2 * adjusted_explore_set) {
+      adjusted_explore_set *= 1.2;
+      adjusted_explore_set = min(adjusted_explore_set, max_explore_set);
+    } else {
+      adjusted_explore_set /= 1.2;
+      adjusted_explore_set = max(adjusted_explore_set, eps_explore_set);
+    }
+    
     next_point = descent_point;
 
-    if (norm(current_point.dec_space - next_point.dec_space) < 0.1 * eps_explore_set) {
-      log("very short step");
-    }
-
-    if (next_point.obj_space[objective] < current_point.obj_space[objective] && !strictly_dominates(next_point.obj_space, current_point.obj_space)) {
+    if (next_point.obj_space[objective] < current_point.obj_space[objective] &&
+        !strictly_dominates(next_point.obj_space, current_point.obj_space)) {
       // successfully made step in set
       previous_point = current_point;
       current_point = next_point;
       
       trace.push_back(current_point);
     } else {
-      if (strictly_dominates(next_point.obj_space, current_point.obj_space) &&
-          descent_status != "degenerate") {
+      if (strictly_dominates(next_point.obj_space, current_point.obj_space)) {
         return {next_point, trace};
       } else if (next_point.obj_space[objective] >= current_point.obj_space[objective]) {
         log("SO Optimum reached");
         return {{}, trace};
       } else {
         print("Something else lol");
-        return {{}, trace};
+        return {next_point, trace};
       }
       // either hit single-objective optimum, gone over ridge or some error
       finished = true;
