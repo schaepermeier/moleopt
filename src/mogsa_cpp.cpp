@@ -158,124 +158,63 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
   
   // Local HV Improvement (not nice when objectives very differently scaled):
 
-  // double_vector mog = normalize(gradients[0]) + normalize(gradients[1]);
-  // mog = -normalize(mog) * dot(normalize(mog), gradients[0]) * dot(normalize(mog), gradients[1]);
-  // 
-  // return mog;
+  double_vector mog = normalize(normalize(gradients[0]) + normalize(gradients[1]));
+  // mog = -mog * sqrt(pow(dot(mog, gradients[0]), 2) + pow(dot(mog, gradients[1]), 2));
+  mog = -mog * sqrt(dot(mog, gradients[0])) * sqrt(dot(mog, gradients[1]));
+  
+  return mog;
   
   // Conventional Definition:
   
-  return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
+  // return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
 }
 
-// std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_point) {
-// 
-//   bool converged = false;
-//   int iters = 0;
-// 
-//   std::string status;
-// 
-//   double eps_step = eps_initial_step_size;
-// 
-//   evaluated_point gradient_point = current_point;
-//   evaluated_point current_best = current_point;
-//   evaluated_point next_point;
-// 
-//   std::vector<double_vector> current_gradients = compute_gradients(current_point);
-//   double_vector descent_direction = compute_descent_direction(current_gradients);
-// 
-//   while (!converged) {
-//     iters++;
-// 
-//     next_point.dec_space = ensure_boundary(gradient_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
-//     next_point.obj_space = fn(next_point.dec_space);
-// 
-//     if (dominates(next_point.obj_space, current_best.obj_space)) {
-//       eps_step *= 2;
-// 
-//       current_best = next_point;
-//     } else {
-//       if (gradient_point.dec_space != current_best.dec_space) {
-//         gradient_point = current_best;
-// 
-//         current_gradients = compute_gradients(gradient_point);
-//         descent_direction = compute_descent_direction(current_gradients);
-//       }
-// 
-//       if (eps_step <= eps_initial_step_size) {
-//         converged = true;
-// 
-//         // if (dominates(current_best.obj_space, next_point.obj_space)) {
-//         if (dominates(current_best.obj_space, next_point.obj_space) ||
-//             norm(descent_direction) < 1e-2) {
-//           status = "regular";
-//         } else {
-//           status = "degenerate";
-//         }
-//       }
-// 
-//       eps_step /= 2;
-//     }
-//   }
-// 
-//   // print(to_string(iters));
-// 
-//   return {current_best, status};
-// }
+evaluated_point descend_to_set(evaluated_point current_point) {
+  double eps_step = eps_initial_step_size + 1;
+  
+  evaluated_point trial_point;
+  
+  while (eps_step > eps_initial_step_size) {
+    eps_step = eps_initial_step_size;
+    
+    std::vector<double_vector> gradients = compute_gradients(current_point);
+    double_vector descent_direction = compute_descent_direction(gradients);
+    
+    double_vector offsets = {
+      dot(-gradients[0], normalize(descent_direction)),
+      dot(-gradients[1], normalize(descent_direction))
+    };
+    
+    print_vector(offsets);
+    
+    double_vector ref_point_obj = current_point.obj_space + offsets;
 
-std::tuple<evaluated_point, std::string> descend_to_set(evaluated_point current_point) {
-
-  int iters = 0;
-
-  std::string status = "regular";
-
-  double eps_step = eps_initial_step_size;
-
-  evaluated_point next_point;
-
-  std::vector<double_vector> next_gradients;
-  double_vector next_descent_direction;
-
-  std::vector<double_vector> gradients = compute_gradients(current_point);
-  double_vector descent_direction = compute_descent_direction(gradients);
-
-  double smoothing_factor = 0.8;
-
-  while (eps_step >= eps_initial_step_size) {
-    iters++;
-
-    next_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
-    next_point.obj_space = fn(next_point.dec_space);
-
-    next_gradients = compute_gradients(next_point);
-    next_descent_direction = compute_descent_direction(next_gradients);
-
-    double factor_eps_step = 1 + dot(next_descent_direction, descent_direction) / (norm(next_descent_direction) * norm(descent_direction));
-
-    if (factor_eps_step < 0.2) {
-      factor_eps_step = 0.2;
+    bool improving = true;
+    double best_improvement = sqrt(offsets[0]) * sqrt(offsets[1]);
+    evaluated_point best_point = current_point;
+    
+    while (improving) {
+      trial_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
+      trial_point.obj_space = fn(trial_point.dec_space);
+      
+      double improvement_f1 = max(0.0, ref_point_obj[0] - trial_point.obj_space[0]);
+      double improvement_f2 = max(0.0, ref_point_obj[1] - trial_point.obj_space[1]);
+      double imp = sqrt(improvement_f1) * sqrt(improvement_f2);
+      
+      if (imp > best_improvement) {
+        best_improvement = imp;
+        best_point = trial_point;
+        eps_step *= 2;
+      } else {
+        improving = false;
+      }
     }
     
-    eps_step *= factor_eps_step;
-
-    for (int i = 0; i < gradients.size(); i++) {
-      gradients[i] = smoothing_factor * gradients[i] + (1 - smoothing_factor) * next_gradients[i];
-    }
-
-    descent_direction = compute_descent_direction(gradients);
-    
-    if (!dominates(current_point.obj_space, next_point.obj_space)) {
-      current_point.dec_space = next_point.dec_space;
-      current_point.obj_space = next_point.obj_space;
-    }
-
+    current_point = best_point;
   }
-
-  print(to_string(iters));
-
-  return {current_point, status};
+  
+  return current_point;
 }
-
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   std::vector<double_vector> current_gradients = compute_gradients(current_point);

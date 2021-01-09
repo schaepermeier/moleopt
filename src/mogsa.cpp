@@ -54,7 +54,7 @@ LogicalVector nondominated(NumericMatrix m) {
 
 // [[Rcpp::export]]
 List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper,
-               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size) {
+               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set) {
   
   auto [local_sets, set_transitions] = run_mogsa(as_vector_fn(fn),
             rows_to_vectors(starting_points),
@@ -62,7 +62,8 @@ List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector low
             as<double_vector>(upper),
             epsilon_gradient,
             epsilon_explore_set,
-            epsilon_initial_step_size);
+            epsilon_initial_step_size,
+            max_explore_set);
   
   List return_values;
   List sets;

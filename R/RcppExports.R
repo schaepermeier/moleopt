@@ -5,7 +5,7 @@ nondominated <- function(m) {
     .Call(`_mogsacpp_nondominated`, m)
 }
 
-run_mogsa_cpp <- function(fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size) {
-    .Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size)
+run_mogsa_cpp <- function(fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set) {
+    .Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set)
 }
 

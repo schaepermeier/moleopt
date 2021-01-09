@@ -17,8 +17,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_mogsa_cpp
-List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size);
-RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP) {
+List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set);
+RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP, SEXP max_explore_setSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,14 +29,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type epsilon_gradient(epsilon_gradientSEXP);
     Rcpp::traits::input_parameter< double >::type epsilon_explore_set(epsilon_explore_setSEXP);
     Rcpp::traits::input_parameter< double >::type epsilon_initial_step_size(epsilon_initial_step_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size));
+    Rcpp::traits::input_parameter< double >::type max_explore_set(max_explore_setSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower, upper, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mogsacpp_nondominated", (DL_FUNC) &_mogsacpp_nondominated, 1},
-    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 7},
+    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 8},
     {NULL, NULL, 0}
 };
 
