@@ -138,7 +138,7 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
     }
     
     double length = norm(lower_d - upper_d);
-    
+
     double_vector gradient_components = (fn_upper - fn_lower) / length;
     
     gradients[0][iter_d] = gradient_components[0];
@@ -170,48 +170,53 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
 }
 
 evaluated_point descend_to_set(evaluated_point current_point) {
-  double factor_eps_step = 2;
-  double factor_offset = 1;
-  
-  double eps_step = eps_initial_step_size + 1;
+
+  double alpha = eps_initial_step_size + 1;
   
   evaluated_point trial_point;
   
-  while (eps_step > eps_initial_step_size) {
-    eps_step = eps_initial_step_size;
+  double rho = 0.5;
+  double nu = 0.85;
+  double delta = 1e-4;
+  
+  double_vector Ck = current_point.obj_space;
+  double qk = 1;
+  
+  while (alpha > eps_initial_step_size) {
+    alpha = eps_initial_step_size;
     
     std::vector<double_vector> gradients = compute_gradients(current_point);
     double_vector descent_direction = compute_descent_direction(gradients);
-    
-    double_vector offsets = {
-      dot(-gradients[0], normalize(descent_direction)),
-      dot(-gradients[1], normalize(descent_direction))
-    };
-    
-    double_vector ref_point_obj = current_point.obj_space + factor_offset * offsets;
 
     bool improving = true;
-    double baseline_improvement = sqrt(offsets[0]) * sqrt(offsets[1]);
     evaluated_point next_point = current_point;
     
-    while (improving) {
-      trial_point.dec_space = ensure_boundary(current_point.dec_space + eps_step * normalize(descent_direction), lower, upper);
+    double_vector expected_improvements = {
+      dot(gradients[0], normalize(descent_direction)),
+      dot(gradients[1], normalize(descent_direction))
+    };
+    
+    while (improving && norm(descent_direction) > 1e-6) {
+      trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
+      print_vector(alpha * normalize(descent_direction));
       trial_point.obj_space = fn(trial_point.dec_space);
       
-      double improvement_f1 = max(0.0, ref_point_obj[0] - trial_point.obj_space[0]);
-      double improvement_f2 = max(0.0, ref_point_obj[1] - trial_point.obj_space[1]);
-      double imp = sqrt(improvement_f1) * sqrt(improvement_f2);
-      
-      if (imp > (factor_offset + 0.1 * eps_step) * baseline_improvement) {
+      if (dominates(trial_point.obj_space, Ck + delta * alpha * expected_improvements)) {
         next_point = trial_point;
-        eps_step *= factor_eps_step;
+        alpha /= rho;
       } else {
         improving = false;
       }
     }
     
     current_point = next_point;
+    
+    double qk_next = nu * qk + 1;
+    Ck = (nu * qk) / qk_next * Ck + current_point.obj_space / qk_next;
+    
+    qk = qk_next;
   }
+  
   
   return current_point;
 }
