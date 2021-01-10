@@ -170,25 +170,28 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
 }
 
 evaluated_point descend_to_set(evaluated_point current_point) {
-
-  double alpha = eps_initial_step_size + 1;
   
   evaluated_point trial_point;
   
-  double rho = 0.5;
-  double nu = 0.85;
-  double delta = 1e-4;
+  double_vector descent_direction = {1}; // some default value for the norm to be non-zero
+  std::vector<double_vector> gradients;
+
+  double alpha = eps_initial_step_size;
+  
+  double rho = 0.5;    // 0.5
+  double nu = 0.85;    // 0.85 
+  double delta = 1e-4; // 1e-4
   
   double_vector Ck = current_point.obj_space;
   double qk = 1;
   
-  while (alpha > eps_initial_step_size) {
-    alpha = eps_initial_step_size;
-    
-    std::vector<double_vector> gradients = compute_gradients(current_point);
-    double_vector descent_direction = compute_descent_direction(gradients);
+  while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
+    gradients = compute_gradients(current_point);
+    descent_direction = compute_descent_direction(gradients);
 
-    bool improving = true;
+    bool ascent = true;
+    bool descent = true;
+    
     evaluated_point next_point = current_point;
     
     double_vector expected_improvements = {
@@ -196,16 +199,17 @@ evaluated_point descend_to_set(evaluated_point current_point) {
       dot(gradients[1], normalize(descent_direction))
     };
     
-    while (improving && norm(descent_direction) > 1e-6) {
+    while ((ascent || descent) && norm(descent_direction) > 1e-6 && alpha >= eps_initial_step_size) {
       trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
-      print_vector(alpha * normalize(descent_direction));
       trial_point.obj_space = fn(trial_point.dec_space);
       
       if (dominates(trial_point.obj_space, Ck + delta * alpha * expected_improvements)) {
         next_point = trial_point;
         alpha /= rho;
+        descent = false;
       } else {
-        improving = false;
+        alpha *= rho;
+        ascent = false;
       }
     }
     
@@ -216,7 +220,6 @@ evaluated_point descend_to_set(evaluated_point current_point) {
     
     qk = qk_next;
   }
-  
   
   return current_point;
 }
