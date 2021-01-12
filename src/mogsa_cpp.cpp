@@ -185,7 +185,11 @@ evaluated_point descend_to_set(evaluated_point current_point) {
   double_vector Ck = current_point.obj_space;
   double qk = 1;
   
+  double iters = 0;
+  
   while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
+    iters++;
+    
     gradients = compute_gradients(current_point);
     descent_direction = compute_descent_direction(gradients);
 
@@ -203,7 +207,8 @@ evaluated_point descend_to_set(evaluated_point current_point) {
       trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
       trial_point.obj_space = fn(trial_point.dec_space);
       
-      if (dominates(trial_point.obj_space, Ck + delta * alpha * expected_improvements)) {
+      if (dominates(trial_point.obj_space, Ck + delta * alpha * expected_improvements) &&
+          !dominates(next_point.obj_space, trial_point.obj_space)) {
         next_point = trial_point;
         alpha /= rho;
         descent = false;
