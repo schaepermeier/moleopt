@@ -169,7 +169,7 @@ double_vector compute_descent_direction(const std::vector<double_vector>& gradie
   // return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
 }
 
-evaluated_point descend_to_set(evaluated_point current_point) {
+evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_point) {
   
   evaluated_point trial_point;
   
@@ -179,12 +179,7 @@ evaluated_point descend_to_set(evaluated_point current_point) {
   double alpha = eps_initial_step_size;
   
   double rho = 0.5;    // 0.5
-  double nu = 0.85;    // 0.85 
-  double delta = 1e-4; // 1e-4
-  
-  double_vector Ck = current_point.obj_space;
-  double qk = 1;
-  
+
   double iters = 0;
   
   while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
@@ -197,19 +192,40 @@ evaluated_point descend_to_set(evaluated_point current_point) {
     bool descent = true;
     
     evaluated_point next_point = current_point;
+    double next_point_imp = 0;
+    double current_imp = sqrt(max(0.0, ref_point[0] - current_point.obj_space[0])) *
+                         sqrt(max(0.0, ref_point[1] - current_point.obj_space[1]));
     
     double_vector expected_improvements = {
-      dot(gradients[0], normalize(descent_direction)),
-      dot(gradients[1], normalize(descent_direction))
+      dot(-gradients[0], normalize(descent_direction)),
+      dot(-gradients[1], normalize(descent_direction))
     };
     
-    while ((ascent || descent) && norm(descent_direction) > 1e-6 && alpha >= eps_initial_step_size) {
+    double baseline_imp = sqrt(expected_improvements[0]) * sqrt(expected_improvements[1]);
+
+    while ((ascent || descent) &&
+           (norm(descent_direction) > 1e-6) &&
+           (alpha >= eps_initial_step_size)) {
       trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
       trial_point.obj_space = fn(trial_point.dec_space);
       
-      if (dominates(trial_point.obj_space, Ck + delta * alpha * expected_improvements) &&
-          !dominates(next_point.obj_space, trial_point.obj_space)) {
+      double trial_point_imp = sqrt(max(0.0, ref_point[0] - trial_point.obj_space[0])) *
+                               sqrt(max(0.0, ref_point[1] - trial_point.obj_space[1]));
+      
+      double_vector extrapolated_point = current_point.obj_space - alpha * expected_improvements;
+      double extrapolated_improvement = sqrt(max(0.0, ref_point[0] - extrapolated_point[0])) *
+                                        sqrt(max(0.0, ref_point[1] - extrapolated_point[1]));
+
+      // print("");
+      // print_vector(trial_point.dec_space);
+      // print_vector(alpha * expected_improvements);
+      // print(extrapolated_improvement - current_imp);
+      // print(trial_point_imp - 1e-4 * alpha * baseline_imp + current_imp);
+
+      if ((trial_point_imp > 1e-4 * alpha * baseline_imp + current_imp)) {
         next_point = trial_point;
+        next_point_imp = trial_point_imp;
+
         alpha /= rho;
         descent = false;
       } else {
@@ -218,12 +234,12 @@ evaluated_point descend_to_set(evaluated_point current_point) {
       }
     }
     
+    print(pow(next_point_imp, 2) - pow(current_imp, 2));
+    if (pow(next_point_imp, 2) - pow(current_imp, 2) < 1e-8) {
+      break;
+    }
+    
     current_point = next_point;
-    
-    double qk_next = nu * qk + 1;
-    Ck = (nu * qk) / qk_next * Ck + current_point.obj_space / qk_next;
-    
-    qk = qk_next;
   }
   
   return current_point;
@@ -263,7 +279,10 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
       next_point.obj_space = fn(next_point.dec_space);
     }
     
-    auto descent_point = descend_to_set(next_point);
+    double_vector ref_point = next_point.obj_space;
+    ref_point[objective] = current_point.obj_space[objective];
+    
+    auto descent_point = descend_to_set(next_point, ref_point);
     double delta = norm(descent_point.dec_space - next_point.dec_space);
     
     if (!dominates(descent_point.obj_space, current_point.obj_space) &&
@@ -338,7 +357,8 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     
     std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
-    auto descent_point = descend_to_set(current_point);
+    double_vector ref_point_offset = {1, 1};
+    auto descent_point = descend_to_set(current_point, current_point.obj_space + ref_point_offset);
     current_point = descent_point;
     
     points_to_explore.push_back({current_point, -1});
