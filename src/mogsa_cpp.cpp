@@ -15,83 +15,7 @@ double max_explore_set;
 
 optim_fn fn;
 gradient_fn grad_fn;
-
-evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_point) {
-  
-  evaluated_point trial_point;
-  
-  double_vector descent_direction = {1}; // some default value for the norm to be non-zero
-  std::vector<double_vector> gradients;
-
-  double alpha = eps_initial_step_size;
-  
-  double rho = 0.5;    // 0.5
-
-  int iters = 0;
-  
-  while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
-    iters++;
-
-    evaluated_point next_point = current_point;
-    double next_point_imp = 0;
-    double current_imp = sqrt(max(0.0, ref_point[0] - current_point.obj_space[0])) *
-                         sqrt(max(0.0, ref_point[1] - current_point.obj_space[1]));
-
-    gradients = grad_fn(current_point);
-
-    // Hypervolume gradient direction:
-    
-    descent_direction = mo_steepest_descent_direction(gradients, ref_point,
-                                                      current_point.obj_space);
-    
-    // print_vector(descent_direction);
-    // print(norm(descent_direction));
-
-    bool ascent = true;
-    bool descent = true;
-    
-    double_vector expected_improvements = {
-      dot(-gradients[0], normalize(descent_direction)),
-      dot(-gradients[1], normalize(descent_direction))
-    };
-    
-    while ((ascent || descent) &&
-           (norm(descent_direction) > 1e-6) &&
-           (alpha >= eps_initial_step_size)) {
-      trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
-      trial_point.obj_space = fn(trial_point.dec_space);
-      
-      double trial_point_imp = sqrt(max(0.0, ref_point[0] - trial_point.obj_space[0])) *
-                               sqrt(max(0.0, ref_point[1] - trial_point.obj_space[1]));
-      
-      // print(trial_point_imp - (1e-4 * (extrapolated_improvement - current_imp) + current_imp));
-      print((trial_point_imp - 1e-4 * alpha * norm(descent_direction) + current_imp));
-      
-      if ((trial_point_imp > 1e-4 * alpha * norm(descent_direction) + current_imp)) {
-        next_point = trial_point;
-        next_point_imp = trial_point_imp;
-
-        alpha /= rho;
-        descent = false;
-      } else {
-        alpha *= rho;
-        ascent = false;
-      }
-    }
-    
-    // print(pow(next_point_imp, 2));
-    // print(pow(next_point_imp, 2) - pow(current_imp, 2));
-    if ((pow(next_point_imp, 2) - pow(current_imp, 2) < 1e-8)) {
-      break;
-    }
-    
-    current_point = next_point;
-  }
-  
-  print("Descent finished, iters: " + to_string(iters));
-  
-  return current_point;
-}
+corrector_fn descend_fn;
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   std::vector<double_vector> current_gradients = grad_fn(current_point);
@@ -130,7 +54,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
     double_vector ref_point = next_point.obj_space;
     // ref_point[objective] = current_point.obj_space[objective];
     
-    auto descent_point = descend_to_set(next_point, ref_point);
+    auto descent_point = descend_fn(next_point, ref_point);
     double delta = norm(descent_point.dec_space - next_point.dec_space);
     
     if (!dominates(descent_point.obj_space, current_point.obj_space) &&
@@ -192,6 +116,11 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
                                "twosided",
                                epsilon_gradient);
   
+  descend_fn = create_armijo_descent_corrector(fn,
+                                               grad_fn,
+                                               eps_initial_step_size,
+                                               lower,
+                                               upper);
   
   std::vector<std::map<double, evaluated_point>> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
@@ -212,7 +141,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
     double_vector ref_point_offset = {0, 0};
-    auto descent_point = descend_to_set(current_point, current_point.obj_space + ref_point_offset);
+    auto descent_point = descend_fn(current_point, current_point.obj_space + ref_point_offset);
     current_point = descent_point;
 
     points_to_explore.push_back({current_point, -1});
