@@ -1,6 +1,7 @@
 #include "mogsa_cpp.h"
-#include "utils.h"
 #include "mo_descent.h"
+#include "set_utils.h"
+#include "utils.h"
 #include <set>
 #include <cmath>
 
@@ -16,6 +17,7 @@ double max_explore_set;
 optim_fn fn;
 gradient_fn grad_fn;
 corrector_fn descend_fn;
+
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   std::vector<double_vector> current_gradients = grad_fn(current_point);
@@ -122,7 +124,9 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
                                                lower,
                                                upper);
   
-  std::vector<std::map<double, evaluated_point>> local_sets;
+  
+  
+  std::vector<efficient_set> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
   
   int starting_points_done = 0;
@@ -153,49 +157,10 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
       
       // Validate that chosen point does not belong to an already explored set
       
-      bool already_explored = false;
-      int containing_set = 0;
+      int containing_set = check_duplicated_set(local_sets, current_point, eps_initial_step_size);
       
-      for (auto& set : local_sets) {
-        containing_set++;
-        
-        double lower_f1 = (*(set.begin())).second.obj_space[0];
-        double upper_f2 = (*(set.begin())).second.obj_space[1];
-        double upper_f1 = (*(set.rbegin())).second.obj_space[0];
-        double lower_f2 = (*(set.rbegin())).second.obj_space[1];
-        
-        if (current_point.obj_space[0] >= lower_f1 && 
-            current_point.obj_space[0] <= upper_f1 && 
-            current_point.obj_space[1] >= lower_f2 && 
-            current_point.obj_space[1] <= upper_f2) {
-          
-          std::map<double, evaluated_point>::iterator it_lower = set.lower_bound(current_point.obj_space[0]);
-  
-          if ((it_lower != set.end()) && (it_lower != set.begin())) {
-            auto& right_neighbor = (*it_lower).second;
-            auto& left_neighbor = (*(--it_lower)).second;
-
-            if (current_point.obj_space[0] >= left_neighbor.obj_space[0] && 
-                current_point.obj_space[0] <= right_neighbor.obj_space[0] && 
-                current_point.obj_space[1] >= right_neighbor.obj_space[1] && 
-                current_point.obj_space[1] <= left_neighbor.obj_space[1]) {
-              
-              double norm_to_left = norm(current_point.dec_space - left_neighbor.dec_space);
-              double norm_to_right = norm(current_point.dec_space - right_neighbor.dec_space);
-              double norm_left_right = norm(left_neighbor.dec_space - right_neighbor.dec_space);
-
-              if ((norm_to_left * norm_to_left + norm_to_right * norm_to_right) <= (norm_left_right * norm_left_right + eps_initial_step_size)) {
-              // if (norm_to_left < norm_left_right && norm_to_right < norm_left_right) {
-                set.insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
-                already_explored = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      if (already_explored) {
+      if (containing_set != -1) {
+        local_sets[containing_set].insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
         set_transitions.push_back({origin_set_id, containing_set});
         print("Skipping: Set already explored");
         continue;
@@ -205,7 +170,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
       print_vector(current_point.dec_space);
       print("Points left: " + to_string(points_to_explore.size()));
       
-      std::map<double, evaluated_point> current_set;
+      efficient_set current_set;
       int current_set_id = local_sets.size() + 1;
       
       set_transitions.push_back({origin_set_id, current_set_id});
