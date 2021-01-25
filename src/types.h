@@ -24,5 +24,6 @@ struct evaluated_point {
 
 typedef std::function<std::vector<double>(std::vector<double>)> optim_fn;
 typedef std::function<std::vector<double_vector>(evaluated_point)> gradient_fn;
+typedef std::function<evaluated_point(evaluated_point, double_vector)> corrector_fn;
 
 #endif
