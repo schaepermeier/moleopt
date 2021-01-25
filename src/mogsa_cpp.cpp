@@ -9,78 +9,12 @@ using namespace std;
 double_vector lower;
 double_vector upper;
 
-double eps_gradient;
 double eps_explore_set;
 double eps_initial_step_size;
 double max_explore_set;
 
 optim_fn fn;
-
-std::vector<double_vector> compute_gradients(const evaluated_point& point) {
-  std::vector<double_vector> gradients(2);
-  int d = point.dec_space.size();
-  
-  bool twosided = true;
-  
-  // Initialize gradients
-
-  gradients[0] = double_vector(d, 0);
-  gradients[1] = double_vector(d, 0);
-  
-  for (int iter_d = 0; iter_d < d; iter_d++) {
-    double_vector lower_d(point.dec_space);
-    double_vector upper_d(point.dec_space);
-    double_vector fn_lower;
-    double_vector fn_upper;
-    
-    if (twosided) {
-      lower_d[iter_d] = lower_d[iter_d] - eps_gradient;
-      upper_d[iter_d] = upper_d[iter_d] + eps_gradient;
-    } else {
-      if (point.dec_space[iter_d] == upper[iter_d]) {
-        // point = upper
-        upper_d[iter_d] = point.dec_space[iter_d];
-        lower_d[iter_d] = point.dec_space[iter_d] - eps_gradient;
-      } else if (point.dec_space[iter_d] == lower[iter_d]){
-        // point = lower
-        upper_d[iter_d] = point.dec_space[iter_d] + eps_gradient;
-        lower_d[iter_d] = point.dec_space[iter_d];
-      } else {
-        if (random_double() >= 0) {
-          upper_d[iter_d] = point.dec_space[iter_d];
-          lower_d[iter_d] = point.dec_space[iter_d] - eps_gradient;
-        } else {
-          upper_d[iter_d] = point.dec_space[iter_d] + eps_gradient;
-          lower_d[iter_d] = point.dec_space[iter_d];
-        }
-      }
-    }
-    
-    lower_d = ensure_boundary(lower_d, lower, upper);
-    upper_d = ensure_boundary(upper_d, lower, upper);
-    
-    if (lower_d == point.dec_space) {
-      fn_lower = point.obj_space;
-    } else {
-      fn_lower = fn(lower_d);
-    }
-    
-    if (upper_d == point.dec_space) {
-      fn_upper = point.obj_space;
-    } else {
-      fn_upper = fn(upper_d);
-    }
-    
-    double length = norm(lower_d - upper_d);
-
-    double_vector gradient_components = (fn_upper - fn_lower) / length;
-    
-    gradients[0][iter_d] = gradient_components[0];
-    gradients[1][iter_d] = gradient_components[1];
-  }
-  
-  return gradients;
-}
+gradient_fn grad_fn;
 
 evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_point) {
   
@@ -103,7 +37,7 @@ evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_
     double current_imp = sqrt(max(0.0, ref_point[0] - current_point.obj_space[0])) *
                          sqrt(max(0.0, ref_point[1] - current_point.obj_space[1]));
 
-    gradients = compute_gradients(current_point);
+    gradients = grad_fn(current_point);
 
     // Hypervolume gradient direction:
     
@@ -160,7 +94,7 @@ evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_
 }
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
-  std::vector<double_vector> current_gradients = compute_gradients(current_point);
+  std::vector<double_vector> current_gradients = grad_fn(current_point);
 
   evaluated_point previous_point;
   evaluated_point next_point;
@@ -244,7 +178,6 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
 std::tuple<std::vector<std::map<double, evaluated_point>>,
            std::vector<std::tuple<int, int>>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double maximum_explore_set) {
-  eps_gradient = epsilon_gradient;
   eps_explore_set = epsilon_explore_set;
   eps_initial_step_size = epsilon_initial_step_size;
   max_explore_set = maximum_explore_set;
@@ -252,6 +185,13 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
   fn = f;
   lower = lower_bounds;
   upper = upper_bounds;
+  
+  grad_fn = create_gradient_fn(fn,
+                               lower,
+                               upper,
+                               "twosided",
+                               epsilon_gradient);
+  
   
   std::vector<std::map<double, evaluated_point>> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
@@ -274,7 +214,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     double_vector ref_point_offset = {0, 0};
     auto descent_point = descend_to_set(current_point, current_point.obj_space + ref_point_offset);
     current_point = descent_point;
-    
+
     points_to_explore.push_back({current_point, -1});
 
     while(points_to_explore.size() > 0) {

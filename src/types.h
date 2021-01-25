@@ -4,7 +4,6 @@
 #include <vector>
 
 typedef std::vector<double> double_vector;
-typedef std::function<std::vector<double>(std::vector<double>)> optim_fn;
 
 struct evaluated_point {
   double_vector dec_space;
@@ -22,5 +21,8 @@ struct evaluated_point {
   //   return this->obj_space[i] < rhs.obj_space[i];
   // }
 };
+
+typedef std::function<std::vector<double>(std::vector<double>)> optim_fn;
+typedef std::function<std::vector<double_vector>(evaluated_point)> gradient_fn;
 
 #endif
