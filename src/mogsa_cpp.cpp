@@ -1,8 +1,7 @@
 #include "mogsa_cpp.h"
-#include <iostream>
-#include <random>
+#include "utils.h"
+#include "mo_descent.h"
 #include <set>
-#include <string>
 #include <cmath>
 
 using namespace std;
@@ -16,71 +15,6 @@ double eps_initial_step_size;
 double max_explore_set;
 
 optim_fn fn;
-
-bool verbose = false;
-
-void log(std::string message) {
-  if (verbose) {
-    std::cout << message << std::endl;
-  }
-}
-
-void print(std::string message) {
-  std::cout << message << std::endl;
-}
-
-void print(double a) {
-  std::cout << a << std::endl;
-}
-
-void print_vector(double_vector v) {
-  for (const auto& el : v) std::cout << el << " ";
-  
-  std::cout << std::endl;
-}
-
-std::default_random_engine generator;
-std::normal_distribution<double> distribution;
-
-double random_double() {
-  return distribution(generator);
-}
-
-// std::vector<double_vector> compute_gradients_stochastic(const evaluated_point& point, int n_samples) {
-//   std::vector<double_vector> gradients(2);
-//   int d = point.dec_space.size();
-//   
-//   // Initialize gradients
-//   
-//   // TODO Arbitrary amount of gradients
-//   gradients[0] = double_vector(d, 0);
-//   gradients[1] = double_vector(d, 0);
-//   
-//   for (int i = 0; i < n_samples; i++) {
-//     // random stochastic perturbation
-//     double_vector perturbation = double_vector(d, 0);
-//     
-//     for (int di = 0; di < d; di++) {
-//       perturbation[di] = random_double();
-//     }
-// 
-//     perturbation = normalize(perturbation);
-//     
-//     // print_vector(perturbation);
-//     
-//     double_vector to_evaluate = ensure_boundary(point.dec_space + eps_gradient * perturbation, lower, upper);
-//     double_vector delta_obj = (fn(to_evaluate) - point.obj_space);
-//     double_vector delta_dec = (to_evaluate - point.dec_space);
-//     
-//     gradients[0] = gradients[0] + (delta_obj[0] / eps_gradient * perturbation);
-//     gradients[1] = gradients[1] + (delta_obj[1] / eps_gradient * perturbation);
-//   }
-//   
-//   gradients[0] = gradients[0] / n_samples;
-//   gradients[1] = gradients[1] / n_samples;
-//   
-//   return gradients;
-// }
 
 std::vector<double_vector> compute_gradients(const evaluated_point& point) {
   std::vector<double_vector> gradients(2);
@@ -148,27 +82,6 @@ std::vector<double_vector> compute_gradients(const evaluated_point& point) {
   return gradients;
 }
 
-double_vector compute_descent_direction(const std::vector<double_vector>& gradients) {
-  int n_objectives = gradients.size();
-  
-  if (n_objectives != 2) {
-    print("Cannot compute descent direction for n_objectives != 2");
-    return double_vector();
-  }
-  
-  // Local HV Improvement (not nice when objectives very differently scaled):
-
-  double_vector mog = normalize(normalize(gradients[0]) + normalize(gradients[1]));
-  // mog = -mog * sqrt(pow(dot(mog, gradients[0]), 2) + pow(dot(mog, gradients[1]), 2));
-  mog = -mog * sqrt(dot(mog, gradients[0])) * sqrt(dot(mog, gradients[1]));
-  
-  return mog;
-  
-  // Conventional Definition:
-  
-  // return -0.5 * (normalize(gradients[0]) + normalize(gradients[1]));
-}
-
 evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_point) {
   
   evaluated_point trial_point;
@@ -180,29 +93,34 @@ evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_
   
   double rho = 0.5;    // 0.5
 
-  double iters = 0;
+  int iters = 0;
   
   while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
     iters++;
-    
-    gradients = compute_gradients(current_point);
-    descent_direction = compute_descent_direction(gradients);
 
-    bool ascent = true;
-    bool descent = true;
-    
     evaluated_point next_point = current_point;
     double next_point_imp = 0;
     double current_imp = sqrt(max(0.0, ref_point[0] - current_point.obj_space[0])) *
                          sqrt(max(0.0, ref_point[1] - current_point.obj_space[1]));
+
+    gradients = compute_gradients(current_point);
+
+    // Hypervolume gradient direction:
+    
+    descent_direction = mo_steepest_descent_direction(gradients, ref_point,
+                                                      current_point.obj_space);
+    
+    // print_vector(descent_direction);
+    // print(norm(descent_direction));
+
+    bool ascent = true;
+    bool descent = true;
     
     double_vector expected_improvements = {
       dot(-gradients[0], normalize(descent_direction)),
       dot(-gradients[1], normalize(descent_direction))
     };
     
-    double baseline_imp = sqrt(expected_improvements[0]) * sqrt(expected_improvements[1]);
-
     while ((ascent || descent) &&
            (norm(descent_direction) > 1e-6) &&
            (alpha >= eps_initial_step_size)) {
@@ -212,17 +130,10 @@ evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_
       double trial_point_imp = sqrt(max(0.0, ref_point[0] - trial_point.obj_space[0])) *
                                sqrt(max(0.0, ref_point[1] - trial_point.obj_space[1]));
       
-      double_vector extrapolated_point = current_point.obj_space - alpha * expected_improvements;
-      double extrapolated_improvement = sqrt(max(0.0, ref_point[0] - extrapolated_point[0])) *
-                                        sqrt(max(0.0, ref_point[1] - extrapolated_point[1]));
-
-      // print("");
-      // print_vector(trial_point.dec_space);
-      // print_vector(alpha * expected_improvements);
-      // print(extrapolated_improvement - current_imp);
-      // print(trial_point_imp - 1e-4 * alpha * baseline_imp + current_imp);
-
-      if ((trial_point_imp > 1e-4 * alpha * baseline_imp + current_imp)) {
+      // print(trial_point_imp - (1e-4 * (extrapolated_improvement - current_imp) + current_imp));
+      print((trial_point_imp - 1e-4 * alpha * norm(descent_direction) + current_imp));
+      
+      if ((trial_point_imp > 1e-4 * alpha * norm(descent_direction) + current_imp)) {
         next_point = trial_point;
         next_point_imp = trial_point_imp;
 
@@ -234,13 +145,16 @@ evaluated_point descend_to_set(evaluated_point current_point, double_vector ref_
       }
     }
     
-    print(pow(next_point_imp, 2) - pow(current_imp, 2));
-    if (pow(next_point_imp, 2) - pow(current_imp, 2) < 1e-8) {
+    // print(pow(next_point_imp, 2));
+    // print(pow(next_point_imp, 2) - pow(current_imp, 2));
+    if ((pow(next_point_imp, 2) - pow(current_imp, 2) < 1e-8)) {
       break;
     }
     
     current_point = next_point;
   }
+  
+  print("Descent finished, iters: " + to_string(iters));
   
   return current_point;
 }
@@ -280,7 +194,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
     }
     
     double_vector ref_point = next_point.obj_space;
-    ref_point[objective] = current_point.obj_space[objective];
+    // ref_point[objective] = current_point.obj_space[objective];
     
     auto descent_point = descend_to_set(next_point, ref_point);
     double delta = norm(descent_point.dec_space - next_point.dec_space);
@@ -311,7 +225,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
       if (strictly_dominates(next_point.obj_space, current_point.obj_space)) {
         return {next_point, trace};
       } else if (next_point.obj_space[objective] >= current_point.obj_space[objective]) {
-        log("SO Optimum reached");
+        // print("SO Optimum reached");
         return {{}, trace};
       } else {
         print("Something else lol");
@@ -357,7 +271,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     
     std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
-    double_vector ref_point_offset = {1, 1};
+    double_vector ref_point_offset = {0, 0};
     auto descent_point = descend_to_set(current_point, current_point.obj_space + ref_point_offset);
     current_point = descent_point;
     
