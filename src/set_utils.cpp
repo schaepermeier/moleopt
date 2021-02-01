@@ -40,6 +40,12 @@ int check_duplicated_set(std::vector<efficient_set> local_sets,
         }
       }
     }
+    
+    for (auto& [f1_val, point] : set) {
+      if (norm(current_point.dec_space - point.dec_space) < eps_initial_step_size) {
+        return containing_set;
+      }
+    }
   }
   
   return -1;
