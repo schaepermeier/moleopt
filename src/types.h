@@ -28,6 +28,6 @@ typedef std::map<double, evaluated_point> efficient_set;
 typedef std::function<std::vector<double>(std::vector<double>)> optim_fn;
 typedef std::function<std::vector<double_vector>(evaluated_point)> gradient_fn;
 typedef std::function<evaluated_point(evaluated_point, double_vector)> corrector_fn;
-// typedef std::function<int(std::vector<efficient_set>, evaluated_point)> set_duplicated_fn;
+typedef std::function<int(std::vector<efficient_set>, evaluated_point, double)> set_duplicated_fn;
 
 #endif
