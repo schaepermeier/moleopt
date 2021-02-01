@@ -124,7 +124,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
                                                lower,
                                                upper);
   
-  
+  set_duplicated_fn already_visited_fn = check_duplicated_set;
   
   std::vector<efficient_set> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
@@ -157,7 +157,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
       
       // Validate that chosen point does not belong to an already explored set
       
-      int containing_set = check_duplicated_set(local_sets, current_point, eps_initial_step_size);
+      int containing_set = already_visited_fn(local_sets, current_point, eps_initial_step_size);
       
       if (containing_set != -1) {
         local_sets[containing_set].insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
