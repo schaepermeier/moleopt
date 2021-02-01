@@ -155,7 +155,7 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
       bool descent = true;
       
       while ((ascent || descent) &&
-             (norm(descent_direction) > 1e-6) &&
+             (norm(descent_direction) > 1e-8) &&
              (alpha >= eps_initial_step_size)) {
         trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
         trial_point.obj_space = fn(trial_point.dec_space);
@@ -169,7 +169,7 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
           next_point = trial_point;
           next_point_imp = trial_point_imp;
           
-          alpha /= rho;
+          alpha /= pow(rho, 2.0/3.0);
           descent = false;
         } else {
           alpha *= rho;
@@ -177,7 +177,8 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
         }
       }
       
-      if ((pow(next_point_imp, 2) - pow(current_imp, 2) < 1e-8)) {
+      if ((next_point_imp - current_imp < 1e-12)) {
+        print("Too slow!");
         break;
       }
       
@@ -185,6 +186,7 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
     }
     
     print("Descent finished, iters: " + to_string(iters));
+    print(alpha);
     
     return current_point;
   };
