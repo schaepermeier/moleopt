@@ -18,4 +18,8 @@ void print_vector(double_vector v);
 
 double random_double();
 
+// === Infinity ===
+
+double const inf = std::numeric_limits<double>::infinity();
+
 #endif

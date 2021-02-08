@@ -1,8 +1,16 @@
 #include "mo_descent.h"
 #include "utils.h"
+#include "vector_utils.h"
 #include <cmath>
 
 using namespace std;
+
+/*
+ * 
+ * Gradient Stuff
+ * 
+ * 
+*/
 
 gradient_fn create_gradient_fn(optim_fn fn,
                                const double_vector& lower,
@@ -118,6 +126,36 @@ double_vector mo_steepest_descent_direction(const std::vector<double_vector>& gr
   return mog;
 }
 
+/*
+ * 
+ * Hypervolume Stuff
+ * 
+ * 
+ */
+
+optim_fn create_improvement_function(const optim_fn& fn, double_vector ref_point) {
+  if (ref_point.size() != 2) {
+    throw "Improvement only supported for dim == 2";
+  }
+  
+  optim_fn hv_fn = [fn, ref_point](double_vector dec_space) {
+    double_vector val = {
+      compute_improvement(ref_point, fn(dec_space))
+    };
+    
+    return val;
+  };
+  
+  return hv_fn;
+}
+
+/*
+ * 
+ * Descent Operators
+ * 
+ * 
+ */
+
 corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
                                              const gradient_fn& grad_fn,
                                              double eps_initial_step_size,
@@ -130,63 +168,47 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
     double_vector descent_direction = {1}; // some default value for the norm to be non-zero
     std::vector<double_vector> gradients;
     
-    double alpha = eps_initial_step_size;
-    
-    double rho = 0.5;    // 0.5
-    
+    double alpha = 2 * eps_initial_step_size;
+    double factor = 2;
     int iters = 0;
     
-    while (alpha >= eps_initial_step_size && norm(descent_direction) > 1e-6) {
+    while (alpha > eps_initial_step_size) {
       iters++;
       
-      evaluated_point next_point = current_point;
-      double next_point_imp = 0;
-      double current_imp = sqrt(max(0.0, ref_point[0] - current_point.obj_space[0])) *
-                           sqrt(max(0.0, ref_point[1] - current_point.obj_space[1]));
+      alpha = eps_initial_step_size;
       
+      double current_improvement = compute_improvement(current_point.obj_space, ref_point);
+      
+      double next_point_improvement = current_improvement;
+      evaluated_point next_point = current_point;
+        
       gradients = grad_fn(current_point);
       
-      // Hypervolume gradient direction:
+      // HV gradient direction
+      descent_direction = mo_steepest_descent_direction(gradients, ref_point, current_point.obj_space);
       
-      descent_direction = mo_steepest_descent_direction(gradients, ref_point,
-                                                        current_point.obj_space);
+      bool improving = true;
       
-      bool ascent = true;
-      bool descent = true;
-      
-      while ((ascent || descent) &&
-             (norm(descent_direction) > 1e-8) &&
-             (alpha >= eps_initial_step_size)) {
+      while (improving) {
         trial_point.dec_space = ensure_boundary(current_point.dec_space + alpha * normalize(descent_direction), lower, upper);
         trial_point.obj_space = fn(trial_point.dec_space);
         
-        double trial_point_imp = sqrt(max(0.0, ref_point[0] - trial_point.obj_space[0])) *
-                                 sqrt(max(0.0, ref_point[1] - trial_point.obj_space[1]));
-        
-        // print((trial_point_imp - 1e-4 * alpha * norm(descent_direction) + current_imp));
-        
-        if ((trial_point_imp > 1e-4 * alpha * norm(descent_direction) + current_imp)) {
+        double trial_point_improvement = compute_improvement(trial_point.obj_space, ref_point);
+
+        if (trial_point_improvement > next_point_improvement) {
           next_point = trial_point;
-          next_point_imp = trial_point_imp;
+          next_point_improvement = trial_point_improvement;
           
-          alpha /= pow(rho, 2.0/3.0);
-          descent = false;
+          alpha *= factor;
         } else {
-          alpha *= rho;
-          ascent = false;
+          improving = false;
         }
-      }
-      
-      if ((next_point_imp - current_imp < 1e-12)) {
-        print("Too slow!");
-        break;
       }
       
       current_point = next_point;
     }
     
-    print("Descent finished, iters: " + to_string(iters));
-    print(alpha);
+    print(iters);
     
     return current_point;
   };

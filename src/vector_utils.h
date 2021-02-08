@@ -2,6 +2,7 @@
 #define VECTOR_UTILS_H
 
 #include "types.h"
+#include "utils.h"
 
 /* Vector addition and subtraction */
 
@@ -26,5 +27,7 @@ double_vector normalize(const double_vector& vector);
 bool dominates(const double_vector& a, const double_vector& b);
 bool strictly_dominates(const double_vector& a, const double_vector& b);
 double_vector ensure_boundary(const double_vector& vector, const double_vector& lower, const double_vector& upper);
+
+double compute_improvement(const double_vector& obj_space, const double_vector& ref_point);
 
 #endif
