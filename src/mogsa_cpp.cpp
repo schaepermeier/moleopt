@@ -104,6 +104,9 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
 std::tuple<std::vector<std::map<double, evaluated_point>>,
            std::vector<std::tuple<int, int>>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
                double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double maximum_explore_set) {
+  
+  /* ========= Setup ========= */
+             
   eps_explore_set = epsilon_explore_set;
   eps_initial_step_size = epsilon_initial_step_size;
   max_explore_set = maximum_explore_set;
@@ -126,68 +129,85 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
   
   set_duplicated_fn already_visited_fn = check_duplicated_set;
   
+  /* ========= Mogsa++ Algorithm ========= */
+  
   std::vector<efficient_set> local_sets;
   std::vector<std::tuple<int, int>> set_transitions;
   
   int starting_points_done = 0;
   
-  for (double_vector starting_point : starting_points) {
+  for (double_vector starting_point_dec : starting_points) {
     starting_points_done++;
     print("Starting point No. " + to_string(starting_points_done));
     
-    evaluated_point current_point = {
-      starting_point,
-      fn(starting_point)
+    evaluated_point starting_point = {
+      starting_point_dec,
+      fn(starting_point_dec)
     };
-
-    evaluated_point next_point;
-    
-    std::vector<std::tuple<evaluated_point, int>> points_to_explore;
     
     double_vector ref_point_offset = {0, 0};
-    auto descent_point = descend_fn(current_point, current_point.obj_space + ref_point_offset);
-    current_point = descent_point;
+    starting_point = descend_fn(starting_point, starting_point.obj_space + ref_point_offset);
 
-    points_to_explore.push_back({current_point, -1});
+    // The locally efficient points that should be explored
+    // during this iteration of the local search.
+    // That is the (descended) initial point, and all (descended)
+    // points derived from crossed ridges.
+    //
+    // -1 denotes that a point was a (descended) starting point.
+    // Otherwise it denotes the ID of the origin set (before crossing a ridge).
+    std::vector<std::tuple<evaluated_point, int>> points_to_explore = {
+      {starting_point, -1}
+    };
 
     while(points_to_explore.size() > 0) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
-      current_point = point_to_explore;
       points_to_explore.pop_back();
       
       // Validate that chosen point does not belong to an already explored set
       
-      int containing_set = already_visited_fn(local_sets, current_point, eps_initial_step_size);
+      int containing_set = already_visited_fn(local_sets, point_to_explore, eps_initial_step_size);
       
       if (containing_set != -1) {
-        local_sets[containing_set].insert(std::pair<double, evaluated_point>(current_point.obj_space[0], current_point));
+        // This set was already explored before.
+        // Log the set transition and continue.
+        
+        local_sets[containing_set].insert(std::pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
         set_transitions.push_back({origin_set_id, containing_set});
         print("Skipping: Set already explored");
-        continue;
-      }
-      
-      print("Exploring new set");
-      print_vector(current_point.dec_space);
-      print("Points left: " + to_string(points_to_explore.size()));
-      
-      efficient_set current_set;
-      int current_set_id = local_sets.size() + 1;
-      
-      set_transitions.push_back({origin_set_id, current_set_id});
-      
-      for (int obj = 0; obj < 2; obj++) {
-        const auto [next_point, trace] = explore_efficient_set(current_point, obj);
+      } else {
+        // This point belongs to an unexplored set
         
-        if (next_point.dec_space.size() != 0) {
-          points_to_explore.push_back({next_point, current_set_id});
+        print("Exploring new set");
+        print_vector(point_to_explore.dec_space);
+        print("Points left: " + to_string(points_to_explore.size()));
+        
+        // Create new local set
+        efficient_set current_set;
+        int current_set_id = local_sets.size() + 1;
+        
+        // Log set transition
+        set_transitions.push_back({origin_set_id, current_set_id});
+        
+        // TODO make explore_efficient_set responsible for tracking objectives
+        
+        for (int obj = 0; obj < 2; obj++) {
+          const auto [next_point, trace] = explore_efficient_set(point_to_explore, obj);
+          
+          if (next_point.dec_space.size() != 0) {
+            // We crossed a ridge and got a (descended) point
+            // that should be explored in this iteration
+            points_to_explore.push_back({next_point, current_set_id});
+          }
+          
+          // Add all newly discovered points to the current set
+          for (const auto& eval_point : trace) {
+            current_set.insert(std::pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
+          }
         }
         
-        for (const auto& eval_point : trace) {
-          current_set.insert(std::pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
-        }
+        local_sets.push_back(current_set);
       }
       
-      local_sets.push_back(current_set);
     }
   }
   
