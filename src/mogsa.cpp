@@ -1,13 +1,29 @@
 #include <Rcpp.h>
 #include "mogsa_cpp.h"
+#include "mo_descent.h"
 
 using namespace Rcpp;
 using namespace std;
 
-optim_fn as_vector_fn(Function fn) {
+optim_fn as_optim_fn(Function fn) {
   optim_fn f = [fn](double_vector x) {
     NumericVector result = fn(x);
     return as<double_vector>(result);
+  };
+  
+  return f;
+}
+
+corrector_fn as_corrector_fn(Function descent_fn) {
+  corrector_fn f = [descent_fn](evaluated_point x, double_vector ref_point) {
+    List result = descent_fn(x.dec_space, ref_point);
+    
+    evaluated_point retval = {
+      as<double_vector>(result["dec_space"]),
+      as<double_vector>(result["obj_space"])
+    };
+    
+    return retval;
   };
   
   return f;
@@ -53,16 +69,49 @@ LogicalVector nondominated(NumericMatrix m) {
 }
 
 // [[Rcpp::export]]
-List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower, NumericVector upper,
-               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set) {
+List run_mogsa_cpp(
+    Function fn,
+    NumericMatrix starting_points,
+    NumericVector lower_bounds,
+    NumericVector upper_bounds,
+    double epsilon_gradient,
+    double epsilon_explore_set,
+    double epsilon_initial_step_size,
+    double max_explore_set,
+    Nullable<Function> custom_descent_fn = R_NilValue) {
   
   /* ========= Setup and run Mogsa ========= */
   
-  auto [local_sets, set_transitions] = run_mogsa(as_vector_fn(fn),
+  optim_fn mo_function = as_optim_fn(fn);
+  double_vector lower = as<double_vector>(lower_bounds);
+  double_vector upper = as<double_vector>(upper_bounds);
+  
+  gradient_fn gradient_function = create_gradient_fn(mo_function,
+                                           lower,
+                                           upper,
+                                           "twosided",
+                                           epsilon_gradient);
+  
+  corrector_fn descent_function;
+  
+  if (custom_descent_fn.isNotNull()) {
+    Function unpacked_descent_fn(custom_descent_fn);
+    descent_function = as_corrector_fn(unpacked_descent_fn);
+  } else {
+    descent_function = create_armijo_descent_corrector(mo_function,
+                                                       gradient_function,
+                                                       epsilon_initial_step_size,
+                                                       lower,
+                                                       upper);
+  }
+  
+  auto [local_sets, set_transitions] = run_mogsa(
+            mo_function,
+            gradient_function,
+            descent_function,
             rows_to_vectors(starting_points),
-            as<double_vector>(lower),
-            as<double_vector>(upper),
-            epsilon_gradient,
+            lower,
+            upper,
             epsilon_explore_set,
             epsilon_initial_step_size,
             max_explore_set);

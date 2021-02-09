@@ -16,7 +16,7 @@ double max_explore_set;
 
 optim_fn fn;
 gradient_fn grad_fn;
-corrector_fn descend_fn;
+corrector_fn descent_fn;
 
 
 std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
@@ -56,7 +56,7 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
     double_vector ref_point = next_point.obj_space;
     // ref_point[objective] = current_point.obj_space[objective];
     
-    auto descent_point = descend_fn(next_point, ref_point);
+    auto descent_point = descent_fn(next_point, ref_point);
     double delta = norm(descent_point.dec_space - next_point.dec_space);
     
     if (!dominates(descent_point.obj_space, current_point.obj_space) &&
@@ -101,31 +101,30 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
   return {{}, trace};
 }
 
-std::tuple<std::vector<std::map<double, evaluated_point>>,
-           std::vector<std::tuple<int, int>>> run_mogsa(optim_fn f, std::vector<double_vector> starting_points, double_vector lower_bounds, double_vector upper_bounds,
-               double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double maximum_explore_set) {
+std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mogsa(
+    optim_fn mo_function,
+    gradient_fn gradient_function,
+    corrector_fn descent_function,
+    std::vector<double_vector> starting_points,
+    double_vector lower_bounds,
+    double_vector upper_bounds,
+    double epsilon_explore_set,
+    double epsilon_initial_step_size,
+    double maximum_explore_set) {
   
   /* ========= Setup ========= */
              
   eps_explore_set = epsilon_explore_set;
-  eps_initial_step_size = epsilon_initial_step_size;
   max_explore_set = maximum_explore_set;
   
-  fn = f;
+  eps_initial_step_size = epsilon_initial_step_size;
+  
+  fn = mo_function;
   lower = lower_bounds;
   upper = upper_bounds;
   
-  grad_fn = create_gradient_fn(fn,
-                               lower,
-                               upper,
-                               "twosided",
-                               epsilon_gradient);
-  
-  descend_fn = create_armijo_descent_corrector(fn,
-                                               grad_fn,
-                                               eps_initial_step_size,
-                                               lower,
-                                               upper);
+  grad_fn = gradient_function;
+  descent_fn = descent_function;
   
   set_duplicated_fn already_visited_fn = check_duplicated_set;
   
@@ -146,7 +145,7 @@ std::tuple<std::vector<std::map<double, evaluated_point>>,
     };
     
     double_vector ref_point_offset = {0, 0};
-    starting_point = descend_fn(starting_point, starting_point.obj_space + ref_point_offset);
+    starting_point = descent_fn(starting_point, starting_point.obj_space + ref_point_offset);
 
     // The locally efficient points that should be explored
     // during this iteration of the local search.
