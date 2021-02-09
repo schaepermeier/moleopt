@@ -1,8 +1,8 @@
 library(tidyverse)
 
-# === moPLOT ===
+# ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 500L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 301L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design)
@@ -13,14 +13,14 @@ less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence)
 g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$height)
 g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
-# === MOGSA ===
+# ========= MOGSA =========
 
 d <- 2
-fid <- 1
+fid <- 10
 iid <- 3
-
 fn <- smoof::makeBiObjBBOBFunction(d, fid, iid)
-# fn <- smoof::makeWFG1Function(2, 1, 1)
+
+# fn <- smoof::makeWFG5Function(2, 1, 1)
 # fn <- smoof::makeDTLZ1Function(2, 2)
 # fn <- makeAsparFunction(2, 2)
 # fn <- smoof::makeMMF4Function()
@@ -40,10 +40,11 @@ opt.path <- NULL
 log_y <- TRUE
 log_x <- FALSE
 
-nruns <- 0
+nruns <- 101
+run_counter <- 0
 
-while (nruns < 1) {
-  cat(paste0("New run, currently at: ", ncol(obj.opt.path), "\n"))
+while (run_counter < nruns) {
+  cat(paste0("New run, ID: ", run_counter, "currently at: ", ncol(obj.opt.path), "\n"))
   
   f <- fn
   
@@ -51,11 +52,17 @@ while (nruns < 1) {
     f <- smoof::addLoggingWrapper(f, logg.x = log_x, logg.y = log_y)
   }
   
+  if (run_counter > 0) {
+    starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
+    starting_points <- do.call(rbind, starting_points)
+  }
+  
   mogsa_trace <- run_mogsa(f, starting_points,
                               eps_gradient = 1e-8,
-                              eps_initial_step_size = 2e-8,
+                              eps_initial_step_size = 1e-6,
                               eps_explore_set = 1e-2,
-                              max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100)
+                              max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
+                              custom_descent_fn = create_lbfgsb_descent(f, lower, upper))
 
   if (log_y) {
     if (is.null(obj.opt.path)) {
@@ -73,7 +80,7 @@ while (nruns < 1) {
     }
   }
 
-  nruns <- nruns + 1
+  run_counter <- run_counter + 1
 }
 
 # any(is.na(obj.opt.path))
@@ -88,7 +95,7 @@ plot_obj_space(mogsa_trace)
 #   geom_point(aes(x = x1, y = x2, color = log(1:nrow(opt.path)/nrow(opt.path))), data = opt.path) +
 #   xlim(lower[1], upper[1]) +
 #   ylim(lower[2], upper[2])
-
+# 
 # g +
 #   geom_path(aes(x = x1, y = x2), data = opt.path)
 
@@ -111,7 +118,7 @@ sum(duplicated(obj.opt.path)) / nrow(obj.opt.path)
 # ideal.point <- apply(obj.opt.path[nondom,1:2], 2, min)
 
 fn1 <- smoof::makeBBOBFunction(d, 1, 7)
-fn2 <- smoof::makeBBOBFunction(d, 17, 8)
+fn2 <- smoof::makeBBOBFunction(d, 21, 8)
 
 ref.point <- c(fn1(smoof::getGlobalOptimum(fn2)$param),
                fn2(smoof::getGlobalOptimum(fn1)$param))
@@ -123,6 +130,7 @@ hv = ecr::computeHV(t(as.matrix(obj.opt.path[nondom,1:2])), ref.point = ref.poin
 hv / hv.norm
 
 # log10(5/6 - hv / hv.norm)
+log10(0.921418301089463 - hv / hv.norm)
 
 ggplot() +
   geom_point(aes(x = y1, y = y2), data = obj.opt.path[!nondom,], color = "red") +
@@ -132,8 +140,8 @@ ggplot() +
   xlim(ideal.point[1], ref.point[1]) +
   ylim(ideal.point[2], ref.point[2])
 
-ggplot() +
-  geom_point(aes(x = y1, y = y2, color = 1:nrow(obj.opt.path)), data = obj.opt.path)
+# ggplot() +
+#   geom_point(aes(x = y1, y = y2, color = 1:nrow(obj.opt.path)), data = obj.opt.path)
 
 # Set transition graph
 
@@ -163,15 +171,17 @@ ggraph(set_transitions, layout = "stress") +
 
 # HV Stuff
 
-# === Visualize ===
+# ========= Visualize =========
 
 ref_point <- apply(design$obj.space, 2, max)
-ref_point <- design$obj.space[12345,]
+# ref_point <- design$obj.space[12345,]
+# ref_point <- fn(c(0.5, 1))
 
 obj_space_hv <- hv_from_obj_space(design$obj.space, ref_point = ref_point, geom_mean = TRUE)
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = -obj_space_hv + max(obj_space_hv)), log.scale = FALSE)
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = -obj_space_hv + max(obj_space_hv)), log.scale = FALSE)
 
-# === Optimize ===
+# ========= Optimize =========
 
 f <- fn
 f <- smoof::addLoggingWrapper(f, logg.x = FALSE, logg.y = TRUE)
@@ -186,7 +196,6 @@ gf <- function(ref_point) {
     
     norm_g1 <- moPLOT:::computeVectorLengthCPP(g1)
     norm_g2 <- moPLOT:::computeVectorLengthCPP(g2)
-    
     
     if (ecr::dominates(y, ref_point)) {
       hv_grad <- -((ref_point[2] - y[2]) * g1 +
@@ -203,7 +212,7 @@ gf <- function(ref_point) {
   }
 }
 
-results <- lapply(1:100, function(i) {
+results <- lapply(1:101, function(i) {
   x_start <- runif_box(lower, upper)
   # starting_point <- 1 / 3 * smoof::getGlobalOptimum(fn1)$param + 2 / 3 * smoof::getGlobalOptimum(fn2)$param
   # starting_point <- starting_point + c(0.01, -0.01)
@@ -211,6 +220,8 @@ results <- lapply(1:100, function(i) {
   
   hv_function <- create_hv_function(f, ref_point = y_start, geom_mean = TRUE)
   
+  # result <- optim(x_start, function(x) hv_function(x), gr = gf(y_start),
+  #                 method = "CG", control = list(fnscale = -1))
   result <- optim(x_start, function(x) hv_function(x), gr = gf(y_start),
                   method = "L-BFGS-B", lower = lower, upper = upper,
                   control = list(fnscale = -1))
