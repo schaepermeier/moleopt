@@ -1,16 +1,14 @@
 #' @export
 create_hv_function <- function(fn, ref_point, geom_mean = FALSE) {
-  
-  if (geom_mean) {
-    function(x) {
-      prod(sqrt(pmax(ref_point - fn(x), 0)))
-    }
-  } else {
-    function(x) {
-      prod(pmax(ref_point - fn(x), 0))
+  function(x) {
+    y <- fn(x)
+    
+    if (geom_mean) {
+      prod(sqrt(pmax(ref_point - y, 0)))
+    } else {
+      prod(pmax(ref_point - y, 0))
     }
   }
-  
 }
 
 #' @export
