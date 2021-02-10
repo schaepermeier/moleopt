@@ -5,8 +5,6 @@
 #include <set>
 #include <cmath>
 
-using namespace std;
-
 double_vector lower;
 double_vector upper;
 
@@ -19,14 +17,14 @@ gradient_fn grad_fn;
 corrector_fn descent_fn;
 
 
-std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
-  std::vector<double_vector> current_gradients = grad_fn(current_point);
+tuple<evaluated_point, vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
+  vector<double_vector> current_gradients = grad_fn(current_point);
 
   evaluated_point previous_point;
   evaluated_point next_point;
   double_vector set_direction;
   
-  std::vector<evaluated_point> trace;
+  vector<evaluated_point> trace;
   trace.push_back(current_point);
   
   bool finished = false;
@@ -101,11 +99,11 @@ std::tuple<evaluated_point, std::vector<evaluated_point>> explore_efficient_set(
   return {{}, trace};
 }
 
-std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mogsa(
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     optim_fn mo_function,
     gradient_fn gradient_function,
     corrector_fn descent_function,
-    std::vector<double_vector> starting_points,
+    vector<double_vector> starting_points,
     double_vector lower_bounds,
     double_vector upper_bounds,
     double epsilon_explore_set,
@@ -130,8 +128,8 @@ std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mo
   
   /* ========= Mogsa++ Algorithm ========= */
   
-  std::vector<efficient_set> local_sets;
-  std::vector<std::tuple<int, int>> set_transitions;
+  vector<efficient_set> local_sets;
+  vector<tuple<int, int>> set_transitions;
   
   int starting_points_done = 0;
   
@@ -154,7 +152,7 @@ std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mo
     //
     // -1 denotes that a point was a (descended) starting point.
     // Otherwise it denotes the ID of the origin set (before crossing a ridge).
-    std::vector<std::tuple<evaluated_point, int>> points_to_explore = {
+    vector<tuple<evaluated_point, int>> points_to_explore = {
       {starting_point, -1}
     };
 
@@ -170,7 +168,7 @@ std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mo
         // This set was already explored before.
         // Log the set transition and continue.
         
-        local_sets[containing_set].insert(std::pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
+        local_sets[containing_set].insert(pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
         set_transitions.push_back({origin_set_id, containing_set});
         print("Skipping: Set already explored");
       } else {
@@ -200,7 +198,7 @@ std::tuple<std::vector<efficient_set>, std::vector<std::tuple<int, int>>> run_mo
           
           // Add all newly discovered points to the current set
           for (const auto& eval_point : trace) {
-            current_set.insert(std::pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
+            current_set.insert(pair<double, evaluated_point>(eval_point.obj_space[0], eval_point));
           }
         }
         
