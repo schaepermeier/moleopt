@@ -29,8 +29,8 @@ corrector_fn as_corrector_fn(Function descent_fn) {
   return f;
 }
 
-std::vector<double_vector> rows_to_vectors(NumericMatrix m) {
-  std::vector<double_vector> vectors;
+vector<double_vector> rows_to_vectors(NumericMatrix m) {
+  vector<double_vector> vectors;
   NumericVector row_vector;
   
   for (int i = 0; i < m.nrow(); i++) {
@@ -47,13 +47,13 @@ std::vector<double_vector> rows_to_vectors(NumericMatrix m) {
 LogicalVector nondominated(NumericMatrix m) {
   int n_vectors = m.nrow();
   
-  std::vector<double_vector> vectors = rows_to_vectors(m);
+  vector<double_vector> vectors = rows_to_vectors(m);
   LogicalVector nondominated(n_vectors);
   
   vector<int> idx(n_vectors);
   iota(idx.begin(), idx.end(), 0);
   
-  std::stable_sort(idx.begin(), idx.end(), [&] (int i, int j) {return vectors[i] < vectors [j];});
+  stable_sort(idx.begin(), idx.end(), [&] (int i, int j) {return vectors[i] < vectors [j];});
   
   double best_f2 = vectors[idx[0]][1];
   nondominated[idx[0]] = true;

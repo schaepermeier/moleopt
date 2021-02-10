@@ -8,7 +8,7 @@
 
 // === Logging Helper ===
 
-void print(std::string message);
+void print(string message);
 
 void print(double a);
 
@@ -20,6 +20,6 @@ double random_double();
 
 // === Infinity ===
 
-double const inf = std::numeric_limits<double>::infinity();
+double const inf = numeric_limits<double>::infinity();
 
 #endif

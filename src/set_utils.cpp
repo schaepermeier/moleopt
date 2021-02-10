@@ -1,6 +1,6 @@
 #include "set_utils.h"
 
-int check_duplicated_set(std::vector<efficient_set> local_sets,
+int check_duplicated_set(vector<efficient_set> local_sets,
                          evaluated_point new_point,
                          double epsilon) {
   int containing_set = -1;
@@ -24,7 +24,7 @@ int check_duplicated_set(std::vector<efficient_set> local_sets,
       // Find the two points of the efficient set
       // that the "new point" has to be between, if it is in this set
       
-      std::map<double, evaluated_point>::iterator it_lower = set.lower_bound(new_point.obj_space[0]);
+      map<double, evaluated_point>::iterator it_lower = set.lower_bound(new_point.obj_space[0]);
       
       if ((it_lower != set.end()) && (it_lower != set.begin())) {
         auto& right_neighbor = (*it_lower).second;

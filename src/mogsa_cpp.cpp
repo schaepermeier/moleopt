@@ -16,7 +16,6 @@ optim_fn fn;
 gradient_fn grad_fn;
 corrector_fn descent_fn;
 
-
 tuple<evaluated_point, vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective) {
   vector<double_vector> current_gradients = grad_fn(current_point);
 

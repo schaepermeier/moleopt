@@ -2,24 +2,24 @@
 
 // === Logging Helper ===
 
-void print(std::string message) {
-  std::cout << message << std::endl;
+void print(string message) {
+  cout << message << endl;
 }
 
 void print(double a) {
-  std::cout << a << std::endl;
+  cout << a << endl;
 }
 
 void print_vector(double_vector v) {
-  for (const auto& el : v) std::cout << el << " ";
+  for (const auto& el : v) cout << el << " ";
   
-  std::cout << std::endl;
+  cout << endl;
 }
 
 // === RNG ===
 
-std::default_random_engine generator;
-std::normal_distribution<double> distribution;
+default_random_engine generator;
+normal_distribution<double> distribution;
 
 double random_double() {
   return distribution(generator);

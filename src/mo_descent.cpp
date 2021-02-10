@@ -3,8 +3,6 @@
 #include "vector_utils.h"
 #include <cmath>
 
-using namespace std;
-
 /*
  * 
  * Gradient Stuff
@@ -15,11 +13,11 @@ using namespace std;
 gradient_fn create_gradient_fn(optim_fn fn,
                                const double_vector& lower,
                                const double_vector& upper,
-                               const std::string& method,
+                               const string& method,
                                double eps_gradient) {
   
   gradient_fn g = [fn, lower, upper, method, eps_gradient](const evaluated_point& point) {
-    std::vector<double_vector> gradients(2);
+    vector<double_vector> gradients(2);
     int d = point.dec_space.size();
     
     // Initialize gradients
@@ -86,7 +84,7 @@ gradient_fn create_gradient_fn(optim_fn fn,
   return g;
 }
 
-double_vector mo_steepest_descent_direction(const std::vector<double_vector>& gradients) {
+double_vector mo_steepest_descent_direction(const vector<double_vector>& gradients) {
   int n_objectives = gradients.size();
   
   if (n_objectives != 2) {
@@ -103,7 +101,7 @@ double_vector mo_steepest_descent_direction(const std::vector<double_vector>& gr
   return mog;
 }
 
-double_vector mo_steepest_descent_direction(const std::vector<double_vector>& gradients,
+double_vector mo_steepest_descent_direction(const vector<double_vector>& gradients,
                                             const double_vector& ref_point,
                                             const double_vector& current_y) {
   double current_improvement = sqrt(max(0.0, ref_point[0] - current_y[0])) *
@@ -166,7 +164,7 @@ corrector_fn create_armijo_descent_corrector(const optim_fn& fn,
     evaluated_point trial_point;
     
     double_vector descent_direction = {1}; // some default value for the norm to be non-zero
-    std::vector<double_vector> gradients;
+    vector<double_vector> gradients;
     
     double alpha = 2 * eps_initial_step_size;
     double factor = 2;

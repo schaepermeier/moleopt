@@ -2,9 +2,8 @@
 #define MOGSA_CPP_H
 
 #include "vector_utils.h"
+#include "types.h"
 #include <map>
-
-using namespace std;
 
 tuple<evaluated_point, vector<evaluated_point>> explore_efficient_set(evaluated_point current_point, int objective);
 
