@@ -112,6 +112,24 @@ double dot(const double_vector& a, const double_vector& b) {
   return result;
 }
 
+double angle(const double_vector& a, const double_vector& b) {
+  double enumerator = dot(a, b);
+  double denominator = norm(a) * norm(b);
+  
+  if (denominator == 0) {
+    return 180;
+  }
+  
+  double rad = acos(enumerator / denominator);
+  double pi = atan(1) * 4;
+  
+  double angle = 180 * rad / pi;
+  
+  angle = max(min(angle, 180.0), 0.0);
+  
+  return angle;
+}
+
 double_vector ensure_boundary(const double_vector& vector, const double_vector& lower, const double_vector& upper) {
   assert(vector.size() == lower.size());
   assert(vector.size() == upper.size());
