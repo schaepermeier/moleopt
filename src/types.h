@@ -31,6 +31,6 @@ typedef function<double_vector(double_vector)> optim_fn;
 typedef function<vector<double_vector>(evaluated_point)> gradient_fn;
 typedef function<evaluated_point(evaluated_point, double_vector)> corrector_fn;
 typedef function<int(vector<efficient_set>, evaluated_point, double)> set_duplicated_fn;
-// typedef 
+typedef function<tuple<efficient_set, vector<evaluated_point>>(evaluated_point)> explore_set_fn;
 
 #endif

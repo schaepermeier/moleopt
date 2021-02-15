@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include "mogsa_cpp.h"
 #include "mo_descent.h"
+#include "explore_set.h"
 
 using namespace Rcpp;
 using namespace std;
@@ -86,11 +87,15 @@ List run_mogsa_cpp(
   double_vector lower = as<double_vector>(lower_bounds);
   double_vector upper = as<double_vector>(upper_bounds);
   
+  // Create Gradient of fn
+  
   gradient_fn gradient_function = create_gradient_fn(mo_function,
                                            lower,
                                            upper,
                                            "twosided",
                                            epsilon_gradient);
+  
+  // Create the descent function
   
   corrector_fn descent_function;
   
@@ -98,17 +103,45 @@ List run_mogsa_cpp(
     Function unpacked_descent_fn(custom_descent_fn);
     descent_function = as_corrector_fn(unpacked_descent_fn);
   } else {
-    descent_function = create_armijo_descent_corrector(mo_function,
-                                                       gradient_function,
-                                                       epsilon_initial_step_size,
-                                                       lower,
-                                                       upper);
+    // descent_function = create_armijo_descent_corrector(mo_function,
+    //                                                    gradient_function,
+    //                                                    epsilon_initial_step_size,
+    //                                                    lower,
+    //                                                    upper);
+    
+    descent_function = create_adaptive_gradient_descent(mo_function,
+                                                        gradient_function,
+                                                        epsilon_initial_step_size,
+                                                        1e-8,
+                                                        lower,
+                                                        upper);
+    
+    // descent_function = create_two_point_stepsize_descent(mo_function,
+    //                                                      gradient_function,
+    //                                                      epsilon_initial_step_size,
+    //                                                      1e-8,
+    //                                                      lower,
+    //                                                      upper);
   }
+  
+  // Create the explore_set function
+  
+  explore_set_fn explore_set_function = get_explore_set_fn(
+    mo_function,
+    gradient_function,
+    descent_function,
+    lower,
+    upper,
+    epsilon_explore_set,
+    max_explore_set);
+  
+  // Run Mogsa
   
   auto [local_sets, set_transitions] = run_mogsa(
             mo_function,
             gradient_function,
             descent_function,
+            explore_set_function,
             rows_to_vectors(starting_points),
             lower,
             upper,
