@@ -37,7 +37,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       mo_function(starting_point_dec)
     };
     
-    double_vector ref_point_offset = {0, 0};
+    double_vector ref_point_offset = {inf, inf};
     starting_point = descent_function(starting_point, starting_point.obj_space + ref_point_offset);
 
     // The locally efficient points that should be explored

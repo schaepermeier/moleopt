@@ -2,6 +2,10 @@
 create_lbfgsb_descent <- function(fn, lower, upper) {
   function(x_start, ref_point) {
     
+    # TODO: Overwrite ref_point currently, because
+    # the input is not really a ref_point right now
+    ref_point <- fn(x_start)
+    
     hv_grad <- create_hv_gradient_function(fn, ref_point, lower, upper)
     hv_function <- create_hv_function(fn, ref_point = ref_point, geom_mean = TRUE)
     

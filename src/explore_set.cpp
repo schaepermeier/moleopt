@@ -77,7 +77,9 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         }
       }
 
-      corrected = descent_fn(predicted, predicted.obj_space);
+      double_vector ref_point = {inf, inf};
+      ref_point[objective] = most_recent.obj_space[objective];
+      corrected = descent_fn(predicted, ref_point);
 
       double correction_distance = norm(predicted.dec_space - corrected.dec_space);
       
