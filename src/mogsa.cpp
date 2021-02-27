@@ -103,18 +103,19 @@ List run_mogsa_cpp(
     Function unpacked_descent_fn(custom_descent_fn);
     descent_function = as_corrector_fn(unpacked_descent_fn);
   } else {
-    // descent_function = create_armijo_descent_corrector(mo_function,
-    //                                                    gradient_function,
-    //                                                    epsilon_initial_step_size,
-    //                                                    lower,
-    //                                                    upper);
+    descent_function = create_mog_hv_descent_corrector(mo_function,
+                                                       gradient_function,
+                                                       epsilon_initial_step_size,
+                                                       1e-8,
+                                                       lower,
+                                                       upper);
     
-    descent_function = create_adaptive_gradient_descent(mo_function,
-                                                        gradient_function,
-                                                        epsilon_initial_step_size,
-                                                        1e-8,
-                                                        lower,
-                                                        upper);
+    // descent_function = create_adaptive_gradient_descent(mo_function,
+    //                                                     gradient_function,
+    //                                                     epsilon_initial_step_size,
+    //                                                     1e-8,
+    //                                                     lower,
+    //                                                     upper);
     
     // descent_function = create_two_point_stepsize_descent(mo_function,
     //                                                      gradient_function,
