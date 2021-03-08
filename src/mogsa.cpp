@@ -16,7 +16,7 @@ optim_fn as_optim_fn(Function fn) {
 }
 
 corrector_fn as_corrector_fn(Function descent_fn) {
-  corrector_fn f = [descent_fn](evaluated_point x, double_vector ref_point) {
+  corrector_fn f = [descent_fn](evaluated_point x, double_vector ref_point, double max_descent) {
     List result = descent_fn(x.dec_space, ref_point);
     
     evaluated_point retval = {
@@ -103,26 +103,12 @@ List run_mogsa_cpp(
     Function unpacked_descent_fn(custom_descent_fn);
     descent_function = as_corrector_fn(unpacked_descent_fn);
   } else {
-    descent_function = create_mog_hv_descent_corrector(mo_function,
-                                                       gradient_function,
-                                                       epsilon_initial_step_size,
-                                                       1e-8,
-                                                       lower,
-                                                       upper);
-    
-    // descent_function = create_adaptive_gradient_descent(mo_function,
-    //                                                     gradient_function,
-    //                                                     epsilon_initial_step_size,
-    //                                                     1e-8,
-    //                                                     lower,
-    //                                                     upper);
-    
-    // descent_function = create_two_point_stepsize_descent(mo_function,
-    //                                                      gradient_function,
-    //                                                      epsilon_initial_step_size,
-    //                                                      1e-8,
-    //                                                      lower,
-    //                                                      upper);
+    descent_function = create_two_point_stepsize_descent(mo_function,
+                                                         gradient_function,
+                                                         epsilon_initial_step_size,
+                                                         1e-6,
+                                                         lower,
+                                                         upper);
   }
   
   // Create the explore_set function

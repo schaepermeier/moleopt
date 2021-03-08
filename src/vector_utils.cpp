@@ -14,6 +14,18 @@ double_vector operator+(const double_vector& a, const double_vector& b) {
   return result;
 }
 
+double_vector operator+(const double_vector& a, double scalar) {
+  double_vector result;
+  result.reserve(a.size());
+  
+  transform(a.begin(), a.end(), back_inserter(result), [&](double v){return v + scalar;});
+  return result;
+}
+
+double_vector operator-(const double_vector& a, double scalar) {
+  return(a + (-scalar));
+}
+
 double_vector operator-(const double_vector& a, const double_vector& b) {
   assert(a.size() == b.size());
   

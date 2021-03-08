@@ -37,8 +37,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       mo_function(starting_point_dec)
     };
     
-    double_vector ref_point_offset = {inf, inf};
-    starting_point = descent_function(starting_point, starting_point.obj_space + ref_point_offset);
+    double_vector ref_point_offset = {0, 0};
+    // double_vector ref_point_offset = {inf, inf};
+    starting_point = descent_function(starting_point, starting_point.obj_space + ref_point_offset, inf);
 
     // The locally efficient points that should be explored
     // during this iteration of the local search.
@@ -57,7 +58,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       
       // Validate that chosen point does not belong to an already explored set
       
-      int containing_set = already_visited_fn(local_sets, point_to_explore, epsilon_initial_step_size);
+      int containing_set = already_visited_fn(local_sets, point_to_explore, epsilon_explore_set);
       
       if (containing_set != -1) {
         // This set was already explored before.

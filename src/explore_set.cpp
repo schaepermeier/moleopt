@@ -36,7 +36,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     while (!terminate) {
       // If objective == 0, the most recent points are at the beginning of set
       // If objective == 1, the most recent points are at the end of set
-
+      
       if (objective == 0) {
         most_recent = (*(set.begin())).second;
 
@@ -51,14 +51,16 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         }
       }
 
-      // print(step_size);
-      
       double_vector set_direction;
 
       if (set.size() == 1) {
         set_direction = -normalize(current_gradients[objective]);
       } else {
         set_direction = normalize(most_recent.dec_space - second_most_recent.dec_space);
+      }
+      
+      if (norm(set_direction) == 0) {
+        break;
       }
 
       predicted.dec_space = ensure_boundary(most_recent.dec_space + step_size * set_direction, lower, upper);
@@ -73,13 +75,23 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           step_size = max(step_size / 2, eps_explore_set);
           continue;
         } else {
-          break;
+          terminate = true;
+          continue;
         }
       }
 
-      double_vector ref_point = {inf, inf};
-      ref_point[objective] = most_recent.obj_space[objective];
-      corrected = descent_fn(predicted, ref_point);
+      // double_vector ref_point = {inf, inf};
+      // ref_point[objective] = most_recent.obj_space[objective];
+      double_vector ref_point = predicted.obj_space;
+      
+      double max_descent;
+      if (step_size == eps_explore_set) {
+        max_descent = inf;
+      } else {
+        max_descent = step_size;
+      }
+      
+      corrected = descent_fn(predicted, ref_point, max_descent);
 
       double correction_distance = norm(predicted.dec_space - corrected.dec_space);
       
@@ -94,16 +106,24 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (correction_distance > step_size ||
           angle_to_corrected < 170) {
         print("The angle to corrected was too small " + to_string(angle_to_corrected) +
-              " or correction distance too large " + to_string(correction_distance));
+              " and/or correction distance too large " + to_string(correction_distance));
         
         if (step_size > eps_explore_set) {
           step_size = max(step_size / 2, eps_explore_set);
           continue;
         }
       }
-
-      if (dominates(corrected.obj_space, most_recent.obj_space)) {
+      
+      if (correction_distance > 10 * step_size) {
+        // Only executed if step_size == eps_explore_set
         ridged_points.push_back(corrected);
+        terminate = true;
+      } else if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
+        ridged_points.push_back(corrected);
+        terminate = true;
+      } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
+        // We hit a weakly dominated area!
+        print("Bruh");
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});

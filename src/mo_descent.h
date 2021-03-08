@@ -16,25 +16,11 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
                                             const double_vector& ref_point,
                                             const double_vector& current_y);
 
-corrector_fn create_mog_hv_descent_corrector(const optim_fn& fn,
-                                             const gradient_fn& grad_fn,
-                                             double eps_initial_step_size,
-                                             double eps_descent_direction,
-                                             const double_vector& lower,
-                                             const double_vector& upper);
-
 corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
                                                const gradient_fn& grad_fn,
                                                double eps_initial_step_size,
                                                double eps_descent_direction,
                                                const double_vector& lower,
                                                const double_vector& upper);
-
-corrector_fn create_adaptive_gradient_descent(const optim_fn& fn,
-                                              const gradient_fn& grad_fn,
-                                              double eps_initial_step_size,
-                                              double eps_descent_direction,
-                                              const double_vector& lower,
-                                              const double_vector& upper);
 
 #endif

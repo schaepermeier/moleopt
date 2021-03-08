@@ -9,6 +9,9 @@
 double_vector operator+(const double_vector& a, const double_vector& b);
 double_vector operator-(const double_vector& a, const double_vector& b);
 
+double_vector operator+(const double_vector& a, double scalar);
+double_vector operator-(const double_vector& a, double scalar);
+
 /* Scalar multiplication and division */
 
 double_vector operator*(const double_vector& a, double scalar);
