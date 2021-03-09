@@ -101,8 +101,8 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
   
   double_vector norms = {norm(gradients[0]), norm(gradients[1])};
   
-  if (norms[0] == 0 ||
-      norms[1] == 0 ||
+  if (norms[0] < 1e-8 ||
+      norms[1] < 1e-8 ||
       isnan((sqrt(norms[1]) / sqrt(norms[0]))) ||
       isnan((sqrt(norms[0]) / sqrt(norms[1])))) {
     return 0 * gradients[0];
@@ -186,7 +186,12 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       trial_point.obj_space = fn(trial_point.dec_space);
       
       alpha *= scale_factor;
-    } while (dominates(trial_point.obj_space, current_iterate.obj_space));
+    } while (dominates(trial_point.obj_space, current_iterate.obj_space) &&
+             norm(current_iterate.dec_space - starting_point.dec_space) < max_descent);
+    
+    if (norm(current_iterate.dec_space - starting_point.dec_space) >= max_descent) {
+      return current_iterate;
+    }
     
     // We increased alpha once too often
     alpha /= scale_factor;

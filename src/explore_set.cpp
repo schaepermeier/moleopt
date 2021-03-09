@@ -106,7 +106,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (correction_distance > step_size ||
           angle_to_corrected < 170) {
         print("The angle to corrected was too small " + to_string(angle_to_corrected) +
-              " and/or correction distance too large " + to_string(correction_distance));
+              " and/or correction distance too large " + to_string(correction_distance) +
+              "/" + to_string(step_size));
         
         if (step_size > eps_explore_set) {
           step_size = max(step_size / 2, eps_explore_set);
