@@ -106,7 +106,7 @@ List run_mogsa_cpp(
     descent_function = create_two_point_stepsize_descent(mo_function,
                                                          gradient_function,
                                                          epsilon_initial_step_size,
-                                                         1e-6,
+                                                         1e-8,
                                                          lower,
                                                          upper);
   }

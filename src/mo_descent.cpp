@@ -228,25 +228,23 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // print(alpha);
         // print("");
         
-        // Will decrease once too often below
-        alpha *= scale_factor;
-        int n_trials = 0;
-        
         do {
-          n_trials++;
-          alpha /= scale_factor;
-          
           trial_point.dec_space = ensure_boundary(current_iterate.dec_space + alpha * descent_direction,
                                         lower, upper);
           trial_point.obj_space = fn(trial_point.dec_space);
+          
+          alpha /= scale_factor;
         } while (!dominates(trial_point.obj_space + 1e-8, ref_point) &&
-                  alpha * norm(descent_direction) >= eps_initial_step_size);
+                  alpha * norm(descent_direction) >= 1e-8);
         
         // print(alpha * norm(descent_direction));
         
         if (!dominates(trial_point.obj_space + 1e-8, ref_point)) {
           break;
         }
+        
+        // Decreased once too often
+        alpha *= scale_factor;
         
         // Update State
         
@@ -274,13 +272,13 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         for (auto& v : obj_history) {
           ref_point = {max(ref_point[0], v[0]), max(ref_point[1], v[1])};
         }
-        
+
         // ref_point = 0.8 * ref_point + 0.2 * current_iterate.obj_space;
 
-        print_vector(ref_point);
+        // print_vector(ref_point);
       }
     
-      print(iters);
+      // print(iters);
     }
     
     return current_iterate;
