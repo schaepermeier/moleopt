@@ -2,22 +2,23 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 1001L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 301L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
-gradients <- moPLOT::computeGradientFieldGrid(design)
+gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
 
 less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "fast")
 
-g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$height)
+g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$height) +
+  coord_fixed()
 g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
 # ========= MOGSA =========
 
-d <- 2
+d <- 5
 fid <- 10
-iid <- 2
+iid <- 3
 fn <- smoof::makeBiObjBBOBFunction(d, fid, iid)
 
 # fn <- smoof::makeWFG5Function(2, 1, 1)
@@ -64,8 +65,8 @@ while (run_counter < nruns) {
   
   mogsa_trace <- run_mogsa(f, starting_points,
                               eps_gradient = 1e-8,
-                              eps_initial_step_size = 1e-7,
-                              eps_explore_set = 1e-6,
+                              eps_initial_step_size = 1e-6,
+                              eps_explore_set = 1e-4,
                               max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
                               # custom_descent_fn = create_lbfgsb_descent(f, lower, upper)
                            )
@@ -97,25 +98,28 @@ while (run_counter < nruns) {
 
 mogsa_trace$sets %>% length
 
-plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
+plot_dec_space(mogsa_trace, lower, upper, color = "set_id") +
   coord_fixed() +
   theme(legend.position = "none")
 
-plot_dec_space(mogsa_trace, lower, upper, color = "set_id") +
+g +
+  geom_point(aes(x1, x2), data = as.data.frame(starting_points), shape = "+", color = "black", size = 10)
+
+plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
   coord_fixed() +
   theme(legend.position = "none")
 
 plot_obj_space(mogsa_trace) +
   theme(legend.position = "none")
 
-ggplot() +
-  geom_point(aes(x = x1, y = x2, color = 1:nrow(opt.path)), data = opt.path) +
-  xlim(lower[1], upper[1]) +
-  ylim(lower[2], upper[2]) +
-  coord_fixed()
+# ggplot() +
+#   geom_point(aes(x = x1, y = x2, color = 1:nrow(opt.path)), data = opt.path) +
+#   xlim(lower[1], upper[1]) +
+#   ylim(lower[2], upper[2]) +
+#   coord_fixed()
 
-ggplot() +
-  geom_point(aes(x = V1, y = V2, color = 1:ncol(obj.opt.path)), data = as.data.frame(t(obj.opt.path)))
+# ggplot() +
+#   geom_point(aes(x = V1, y = V2, color = 1:ncol(obj.opt.path)), data = as.data.frame(t(obj.opt.path)))
 
 # ggplot() +
 #   geom_path(aes(x = x1, y = x2), data = opt.path)
@@ -193,3 +197,15 @@ ggraph(tbl_transitions, layout = "stress") +
                 end_cap = circle(4, "mm")) +
   geom_node_point(aes(size = prop), color = node_color) +
   scale_size_area(limits = c(0,1))
+
+### 2D Decision Spaces ###
+
+node_pos <- set_medians(mogsa_trace$sets)
+
+ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
+  geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
+                end_cap = circle(4, "mm")) +
+  geom_node_point(aes(size = prop), color = node_color) +
+  scale_size_area(limits = c(0,1)) +
+  coord_fixed() +
+  theme(legend.position = "none")

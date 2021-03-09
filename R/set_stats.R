@@ -18,8 +18,8 @@ compute_nondominated_sets <- function(sets) {
 }
 
 set_medians <- function(sets) {
-  lapply(sets, function(set) {
+  sapply(sets, function(set) {
     dec_space <- set$dec_space
     dec_space[ceiling(nrow(dec_space) / 2),]
-  })
+  }) %>% t
 }
