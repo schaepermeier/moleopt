@@ -25,8 +25,10 @@ plot_dec_space <- function(mogsa_trace, lower, upper, color = "set_id") {
     nds <- ecr::doNondominatedSorting(t(df_combined_obj[,1:2]))
     data_color <- log(nds$dom.counter + 1)
   }
+  
+  df_combined <- df_combined[order(data_color, decreasing = TRUE),]
 
-  g <- ggplot(data = df_combined, aes(x = x1, y = x2, color = data_color)) +
+  g <- ggplot(data = df_combined, aes(x = x1, y = x2, color = sort(data_color, decreasing = TRUE))) +
     geom_point() +
     xlim(lower[1], upper[1]) +
     ylim(lower[2], upper[2])
@@ -58,7 +60,9 @@ plot_obj_space <- function(mogsa_trace, color = "set_id") {
     data_color <- log(nds$dom.counter + 1)
   }
   
-  g <- ggplot(data = df_combined, aes(x = y1, y = y2, color = data_color)) +
+  df_combined <- df_combined[order(data_color, decreasing = TRUE),]
+  
+  g <- ggplot(data = df_combined, aes(x = y1, y = y2, color = sort(data_color, decreasing = TRUE))) +
     geom_point()
   
   if (color == "domcount") {
