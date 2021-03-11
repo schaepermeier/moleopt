@@ -154,7 +154,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
     evaluated_point previous_iterate;
     evaluated_point current_iterate;
 
-    double_vector descent_direction = mo_steepest_descent_direction(grad_fn(starting_point));
+    vector<double_vector> gradients = grad_fn(starting_point);
+    double_vector descent_direction = mo_steepest_descent_direction(gradients);
     double_vector previous_descent_direction = descent_direction;
     
     if (norm(descent_direction) == 0) {
@@ -187,7 +188,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       
       alpha *= scale_factor;
     } while (dominates(trial_point.obj_space, current_iterate.obj_space) &&
-             norm(current_iterate.dec_space - starting_point.dec_space) < max_descent);
+             norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
+             alpha * norm(descent_direction) < 0.1);
     
     if (norm(current_iterate.dec_space - starting_point.dec_space) >= max_descent) {
       return current_iterate;
@@ -229,27 +231,37 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           break;
         }
         
+        alpha = min(alpha, 0.1 / norm(descent_direction));
+        
         // print_vector(descent_direction);
         // print(alpha);
         // print("");
         
+        double_vector expected_improvements = {
+          dot(normalize(descent_direction), gradients[0]),
+          dot(normalize(descent_direction), gradients[1])
+        };
+        
+        // print_vector(expected_improvements);
+        double armijo_scale = 1e-4;
+        
+        // Decreased once too often below
+        alpha *= scale_factor;
+        
         do {
+          alpha /= scale_factor;
+          
           trial_point.dec_space = ensure_boundary(current_iterate.dec_space + alpha * descent_direction,
                                         lower, upper);
           trial_point.obj_space = fn(trial_point.dec_space);
-          
-          alpha /= scale_factor;
-        } while (!dominates(trial_point.obj_space + 1e-8, ref_point) &&
+        } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point) &&
                   alpha * norm(descent_direction) >= 1e-8);
         
-        // print(alpha * norm(descent_direction));
+        // print(alpha);
         
-        if (!dominates(trial_point.obj_space + 1e-8, ref_point)) {
+        if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point)) {
           break;
         }
-        
-        // Decreased once too often
-        alpha *= scale_factor;
         
         // Update State
         
@@ -257,7 +269,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         previous_descent_direction = descent_direction;
         
         current_iterate = trial_point;
-        descent_direction = mo_steepest_descent_direction(grad_fn(current_iterate));
+        gradients = grad_fn(current_iterate);
+        descent_direction = mo_steepest_descent_direction(gradients);
         
         // Update ref_point
         
@@ -283,7 +296,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // print_vector(ref_point);
       }
     
-      // print(iters);
+      print(iters);
     }
     
     return current_iterate;
