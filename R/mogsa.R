@@ -1,9 +1,14 @@
 #' @export
 run_mogsa <- function(fn, starting_points,
                       eps_gradient = 1e-8, eps_initial_step_size = 1e-6, eps_explore_set = 1e-4, max_explore_set = 1e-2,
-                      custom_descent_fn = NULL) {
-  lower <- smoof::getLowerBoxConstraints(fn)
-  upper <- smoof::getUpperBoxConstraints(fn)
+                      custom_descent_fn = NULL, lower = NULL, upper = NULL) {
+  if (is.null(lower)) {
+    lower <- smoof::getLowerBoxConstraints(fn)
+  }
+  
+  if (is.null(upper)) {
+    upper <- smoof::getUpperBoxConstraints(fn)
+  }
 
   run_mogsa_cpp(fn = fn,
                 starting_points = starting_points,
