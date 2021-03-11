@@ -99,6 +99,11 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (set.size() > 1) {
         angle_to_corrected = angle(most_recent.dec_space - second_most_recent.dec_space,
                                    most_recent.dec_space - corrected.dec_space);
+        if (isnan(angle_to_corrected)) {
+          // In this case, most likely, the last two steps were almost
+          // into the same direction which induced some numerical issue
+          angle_to_corrected = 180;
+        }
       } else {
         angle_to_corrected = 180;
       }
@@ -129,9 +134,14 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});
+        // print_vector(corrected.dec_space);
+        // print(angle_to_corrected);
+        // print(correction_distance);
+        // print(step_size);
+        // print("");
         
         if (angle_to_corrected > 175) {
-          step_size = min(step_size * 2, max_explore_set);
+          step_size = min(step_size * sqrt(2), max_explore_set);
         }
       }
     }
