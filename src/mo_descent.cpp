@@ -149,6 +149,9 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
   corrector_fn corr_fn = [fn, grad_fn, eps_initial_step_size, eps_descent_direction, lower, upper]
                          (evaluated_point starting_point, double_vector ref_point, double max_descent) {
     
+    // TODO change to parameter
+    double max_stepsize = 0.1;
+    
     // Setup
     
     evaluated_point current_iterate = starting_point;
@@ -192,7 +195,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       alpha *= scale_factor;
     } while (dominates(trial_point.obj_space, current_iterate.obj_space) &&
              norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
-             alpha * norm(descent_direction) < 0.1);
+             alpha * norm(descent_direction) < max_stepsize);
     
     if (norm(current_iterate.dec_space - starting_point.dec_space) >= max_descent) {
       return current_iterate;
@@ -235,7 +238,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           break;
         }
         
-        alpha = min(alpha, 0.1 / norm(descent_direction));
+        alpha = min(alpha, max_stepsize / norm(descent_direction));
+        // alpha = max(alpha, eps_initial_step_size / norm(descent_direction));
         
         // print(descent_direction);
         // print(alpha);
@@ -258,12 +262,14 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           trial_point.dec_space = ensure_boundary(current_iterate.dec_space + alpha * descent_direction,
                                         lower, upper);
           trial_point.obj_space = fn(trial_point.dec_space);
-        } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point) &&
-                  alpha * norm(descent_direction) >= 1e-8);
+        } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-6, ref_point) &&
+                  // alpha * norm(descent_direction) >= eps_initial_step_size &&
+                  alpha * -expected_improvements[0] >= 1e-6 &&
+                  alpha * -expected_improvements[1] >= 1e-6);
         
-        // print(armijo_scale * alpha * expected_improvements);
+        // print(alpha);
         
-        if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point)) {
+        if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-6, ref_point)) {
           break;
         }
         
