@@ -151,11 +151,14 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
     
     // Setup
     
+    evaluated_point current_iterate = starting_point;
     evaluated_point previous_iterate;
-    evaluated_point current_iterate;
 
     vector<double_vector> gradients = grad_fn(starting_point);
+    
     double_vector descent_direction = mo_steepest_descent_direction(gradients);
+    descent_direction = project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
+    
     double_vector previous_descent_direction = descent_direction;
     
     if (norm(descent_direction) == 0) {
@@ -207,6 +210,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       return starting_point;
     } else {
       descent_direction = mo_steepest_descent_direction(grad_fn(current_iterate));
+      descent_direction = project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
       int iters = 0;
       
       while (norm(descent_direction) >= eps_descent_direction && alpha > 0 &&
@@ -257,7 +261,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point) &&
                   alpha * norm(descent_direction) >= 1e-8);
         
-        // print(alpha);
+        // print_vector(armijo_scale * alpha * expected_improvements);
         
         if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point)) {
           break;
@@ -271,6 +275,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         current_iterate = trial_point;
         gradients = grad_fn(current_iterate);
         descent_direction = mo_steepest_descent_direction(gradients);
+        descent_direction = project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
         
         // Update ref_point
         

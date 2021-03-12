@@ -180,3 +180,26 @@ double compute_improvement(const double_vector& obj_space, const double_vector& 
     return -inf;
   }
 }
+
+double_vector project_feasible_direction(const double_vector& search_direction, const double_vector& current_position,
+                                         const double_vector& lower, const double_vector& upper) {
+  assert(search_direction.size() == lower.size());
+  assert(search_direction.size() == upper.size());
+  assert(search_direction.size() == current_position.size());
+  
+  double_vector feasible_direction(search_direction.size());
+  
+  for (int i = 0; i < feasible_direction.size(); i++) {
+    if (current_position[i] == upper[i]) {
+      // only negative direction allowed
+      feasible_direction[i] = min(search_direction[i], 0.0);
+    } else if (current_position[i] == lower[i]) {
+      // only positive direction allowed
+      feasible_direction[i] = max(search_direction[i], 0.0);
+    } else {
+      feasible_direction[i] = search_direction[i];
+    }
+  }
+  
+  return feasible_direction;
+}
