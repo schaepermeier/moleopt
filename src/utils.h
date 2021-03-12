@@ -12,7 +12,7 @@ void print(string message);
 
 void print(double a);
 
-void print_vector(double_vector v);
+void print(double_vector v);
 
 // === RNG ===
 

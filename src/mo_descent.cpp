@@ -237,7 +237,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         
         alpha = min(alpha, 0.1 / norm(descent_direction));
         
-        // print_vector(descent_direction);
+        // print(descent_direction);
         // print(alpha);
         // print("");
         
@@ -246,7 +246,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           dot(normalize(descent_direction), gradients[1])
         };
         
-        // print_vector(expected_improvements);
+        // print(expected_improvements);
         double armijo_scale = 1e-4;
         
         // Decreased once too often below
@@ -261,7 +261,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point) &&
                   alpha * norm(descent_direction) >= 1e-8);
         
-        // print_vector(armijo_scale * alpha * expected_improvements);
+        // print(armijo_scale * alpha * expected_improvements);
         
         if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point)) {
           break;
@@ -298,7 +298,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
 
         // ref_point = 0.8 * ref_point + 0.2 * current_iterate.obj_space;
 
-        // print_vector(ref_point);
+        // print(ref_point);
       }
     
       print(iters);

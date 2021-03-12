@@ -10,7 +10,7 @@ void print(double a) {
   cout << a << endl;
 }
 
-void print_vector(double_vector v) {
+void print(double_vector v) {
   for (const auto& el : v) cout << el << " ";
   
   cout << endl;

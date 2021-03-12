@@ -137,7 +137,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});
-        // print_vector(corrected.obj_space - most_recent.obj_space);
+        // print(corrected.obj_space - most_recent.obj_space);
         // print(angle_to_corrected);
         // print(correction_distance);
         // print(step_size);
