@@ -22,7 +22,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   vector<evaluated_point> ridged_points;
   
   // maximum angle deviation during set exploration
-  double max_angle_deviation = 22.5;
+  double max_angle_deviation = 45;
   
   for (int objective = 0; objective < 2; objective++) {
 
@@ -35,6 +35,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     double step_size = eps_explore_set;
 
     bool terminate = false;
+    bool force_gradient_direction = false;
 
     while (!terminate) {
       // If objective == 0, the most recent points are at the beginning of set
@@ -56,7 +57,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
 
       double_vector set_direction;
 
-      if (set.size() == 1) {
+      if (set.size() == 1 || force_gradient_direction) {
         set_direction = project_feasible_direction(-current_gradients[objective], starting_point.dec_space, lower, upper);
         set_direction = normalize(set_direction);
       } else {
@@ -81,7 +82,11 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           step_size = max(step_size / 2, eps_explore_set);
           continue;
         } else {
-          terminate = true;
+          if (force_gradient_direction) {
+            terminate = true;
+          } else {
+            force_gradient_direction = true;
+          }
           continue;
         }
       }
@@ -91,7 +96,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       double_vector ref_point = predicted.obj_space;
       
       double max_descent;
-      if (step_size == eps_explore_set) {
+      if (step_size == eps_explore_set && force_gradient_direction) {
         max_descent = inf;
       } else {
         max_descent = step_size;
@@ -123,15 +128,20 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         if (step_size > eps_explore_set) {
           step_size = max(step_size / 2, eps_explore_set);
           continue;
+        } else {
+          if (!force_gradient_direction) {
+            force_gradient_direction = true;
+            continue;
+          }
         }
       }
       
-      if (correction_distance > 10 * step_size &&
-          !(set.size() == 1)) {
-        // Only executed if step_size == eps_explore_set
+      if (correction_distance > max_explore_set && set.size() != 1 && force_gradient_direction) {
+        // Only executed if step_size == eps_explore_set && force_gradient_direction
         ridged_points.push_back(corrected);
         terminate = true;
-      } else if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
+      } else
+        if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
         ridged_points.push_back(corrected);
         terminate = true;
       } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
@@ -145,6 +155,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         // print(correction_distance);
         // print(step_size);
         // print("");
+        
+        force_gradient_direction = false;
         
         if (angle_to_corrected > (180 - max_angle_deviation / 2)) {
           step_size = min(step_size * sqrt(2), max_explore_set);
