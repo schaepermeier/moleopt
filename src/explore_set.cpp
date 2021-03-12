@@ -21,6 +21,9 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   // Setup vector for points that crossed a ridge
   vector<evaluated_point> ridged_points;
   
+  // maximum angle deviation during set exploration
+  double max_angle_deviation = 45;
+  
   for (int objective = 0; objective < 2; objective++) {
 
     // Some helper objects
@@ -109,7 +112,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       }
 
       if (correction_distance > step_size ||
-          angle_to_corrected < 170) {
+          angle_to_corrected < (180 - max_angle_deviation)) {
         print("The angle to corrected was too small " + to_string(angle_to_corrected) +
               " and/or correction distance too large " + to_string(correction_distance) +
               "/" + to_string(step_size));
@@ -134,13 +137,13 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});
-        // print_vector(corrected.dec_space);
+        // print_vector(corrected.obj_space - most_recent.obj_space);
         // print(angle_to_corrected);
         // print(correction_distance);
         // print(step_size);
         // print("");
         
-        if (angle_to_corrected > 175) {
+        if (angle_to_corrected > (180 - max_angle_deviation / 2)) {
           step_size = min(step_size * sqrt(2), max_explore_set);
         }
       }
