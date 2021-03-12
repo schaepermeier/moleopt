@@ -151,6 +151,18 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
     
     // TODO change to parameter
     double max_stepsize = 0.1;
+    double scale_factor = 2;
+    double armijo_scale = 1e-4;
+    
+    // Non-monotone search setup
+    
+    int history_size = 20;
+    
+    std::deque<double_vector> obj_history;
+    
+    for (int i = 0; i < history_size; i++) {
+      obj_history.push_back(ref_point);
+    }
     
     // Setup
     
@@ -169,17 +181,6 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
     }
 
     double alpha = eps_initial_step_size / norm(descent_direction);
-    double scale_factor = 2;
-    
-    // Non-monotone search setup
-    
-    int history_size = 20;
-    
-    std::deque<double_vector> obj_history;
-    
-    for (int i = 0; i < history_size; i++) {
-      obj_history.push_back(ref_point);
-    }
     
     // First: Some line search to find initial alpha
     
@@ -207,12 +208,12 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
     previous_iterate = starting_point;
     previous_descent_direction = descent_direction;
     
-    
     if (current_iterate.dec_space == starting_point.dec_space) {
       // We did not do any progress, so we can stop here
       return starting_point;
     } else {
-      descent_direction = mo_steepest_descent_direction(grad_fn(current_iterate));
+      gradients = grad_fn(current_iterate);
+      descent_direction = mo_steepest_descent_direction(gradients);
       descent_direction = project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
       int iters = 0;
       
@@ -241,17 +242,12 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         alpha = min(alpha, max_stepsize / norm(descent_direction));
         // alpha = max(alpha, eps_initial_step_size / norm(descent_direction));
         
-        // print(descent_direction);
-        // print(alpha);
-        // print("");
-        
         double_vector expected_improvements = {
           dot(normalize(descent_direction), gradients[0]),
           dot(normalize(descent_direction), gradients[1])
         };
         
         // print(expected_improvements);
-        double armijo_scale = 1e-4;
         
         // Decreased once too often below
         alpha *= scale_factor;
@@ -262,14 +258,15 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           trial_point.dec_space = ensure_boundary(current_iterate.dec_space + alpha * descent_direction,
                                         lower, upper);
           trial_point.obj_space = fn(trial_point.dec_space);
-        } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-6, ref_point) &&
-                  // alpha * norm(descent_direction) >= eps_initial_step_size &&
-                  alpha * -expected_improvements[0] >= 1e-6 &&
-                  alpha * -expected_improvements[1] >= 1e-6);
+        } while (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point) &&
+                  alpha * norm(descent_direction) >= eps_initial_step_size &&
+                  alpha * -expected_improvements[0] >= 1e-8 &&
+                  alpha * -expected_improvements[1] >= 1e-8
+                   );
         
         // print(alpha);
         
-        if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-6, ref_point)) {
+        if (!dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements + 1e-8, ref_point)) {
           break;
         }
         
