@@ -6,15 +6,15 @@ create_lbfgsb_descent <- function(fn, lower, upper) {
     # the input is not really a ref_point right now
     ref_point <- fn(x_start)
     
-    hv_grad <- create_hv_gradient_function(fn, ref_point, lower, upper)
+    hv_grad <- create_hv_gradient_function(fn, ref_point, lower, upper, always_mog = FALSE)
     hv_function <- create_hv_function(fn, ref_point = ref_point, geom_mean = TRUE)
     
     tryCatch({
       result <- optim(x_start, hv_function, gr = hv_grad,
-            method = "L-BFGS-B", lower = lower, upper = upper,
-            control = list(fnscale = -1))
-      
-      # print(result)
+                      method = "L-BFGS-B", lower = lower, upper = upper,
+                      control = list(fnscale = -1))
+
+      # print(result$message)
       
       list(dec_space = result$par,
            obj_space = fn(result$par))
@@ -27,7 +27,7 @@ create_lbfgsb_descent <- function(fn, lower, upper) {
 }
 
 #' @export
-create_hv_gradient_function <- function(f, ref_point, lower, upper) {
+create_hv_gradient_function <- function(f, ref_point, lower, upper, always_mog = FALSE) {
   function(x) {
     y <- f(x)
     G <- moPLOT::estimateGradientBothDirections(f, x, prec.grad = 1e-08, lower = lower, upper = upper)
@@ -39,7 +39,7 @@ create_hv_gradient_function <- function(f, ref_point, lower, upper) {
     norm_g2 <- moPLOT:::computeVectorLengthCPP(g2)
     
     
-    if (ecr::dominates(y, ref_point)) {
+    if (!always_mog && ecr::dominates(y, ref_point)) {
       hv_grad <- -((ref_point[2] - y[2]) * g1 +
                    (ref_point[1] - y[1]) * g2)
       
