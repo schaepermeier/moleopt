@@ -2,13 +2,13 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 301L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 501L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
 
-less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "fast")
+less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "slow")
 
 g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$height) +
   coord_fixed()
@@ -16,13 +16,13 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
 # ========= MOGSA =========
 
-d <- 5
+d <- 3
 fid <- 10
-iid <- 3
+iid <- 6
 fn <- smoof::makeBiObjBBOBFunction(d, fid, iid)
 
 # fn <- smoof::makeWFG5Function(2, 1, 1)
-# fn <- smoof::makeDTLZ1Function(dimensions = 3, n.objectives = 2)
+# fn <- smoof::makeDTLZ2Function(dimensions = 2, n.objectives = 2)
 # fn <- makeAsparFunction(2, 2)
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
 #                                         par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5, -5), upper = c(5, 5)))
@@ -68,7 +68,9 @@ while (run_counter < nruns) {
                               eps_initial_step_size = 1e-6,
                               eps_explore_set = 1e-4,
                               max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
-                              # custom_descent_fn = create_lbfgsb_descent(f, lower, upper)
+                              # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
+                              # lower = rep(-Inf, length(lower)),
+                              # upper = rep(Inf, length(upper))
                            )
 
   if (log_y) {
@@ -98,19 +100,25 @@ while (run_counter < nruns) {
 
 mogsa_trace$sets %>% length
 
+set_sizes <- sapply(mogsa_trace$sets, function(s) nrow(s$obj_space))
+sum(set_sizes > 2)
+
+sum(mogsa_trace$transitions[,1] != -1)
+
 plot_dec_space(mogsa_trace, lower, upper, color = "set_id") +
-  coord_fixed() +
-  theme(legend.position = "none")
-
-g +
-  geom_point(aes(x1, x2), data = as.data.frame(starting_points), shape = "+", color = "black", size = 10)
-
-plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
   coord_fixed() +
   theme(legend.position = "none")
 
 plot_obj_space(mogsa_trace) +
   theme(legend.position = "none")
+
+plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
+  coord_fixed() +
+  theme(legend.position = "none")
+
+# ggplot() +
+#   geom_point(aes(x1, x2), data = as.data.frame(starting_points), shape = "+", color = "black", size = 10) +
+#   coord_fixed()
 
 # ggplot() +
 #   geom_point(aes(x = x1, y = x2, color = 1:nrow(opt.path)), data = opt.path) +
@@ -144,7 +152,7 @@ sum(duplicated(obj.opt.path)) / nrow(obj.opt.path)
 # ideal.point <- apply(obj.opt.path[nondom,1:2], 2, min)
 
 fn1 <- smoof::makeBBOBFunction(d, 1, 7)
-fn2 <- smoof::makeBBOBFunction(d, 1, 8)
+fn2 <- smoof::makeBBOBFunction(d, 21, 8)
 
 ref.point <- c(fn1(smoof::getGlobalOptimum(fn2)$param),
                fn2(smoof::getGlobalOptimum(fn1)$param))
@@ -209,3 +217,37 @@ ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
   scale_size_area(limits = c(0,1)) +
   coord_fixed() +
   theme(legend.position = "none")
+
+
+
+### Plotly 3D Sets ###
+
+dfs <- lapply(seq_along(mogsa_trace$sets), function(i) {
+  data_dec <- as.data.frame(mogsa_trace$sets[[i]]$dec_space)
+  colnames(data_dec) <- c("x1", "x2", "x3")
+  
+  data_dec[,"set_id"] <- i
+  
+  data_dec
+})
+
+dfs_obj <- lapply(seq_along(mogsa_trace$sets), function(i) {
+  data_obj <- as.data.frame(mogsa_trace$sets[[i]]$obj_space)
+  colnames(data_obj) <- c("y1", "y2")
+  
+  data_obj
+})
+
+df_combined <- do.call(rbind, dfs)
+df_combined_obj <- do.call(rbind, dfs_obj)
+
+plotly::plot_ly(data = df_combined,
+                type = "scatter3d", mode = "markers",
+                x = ~x1, y = ~x2, z = ~x3,
+                color = df_combined$set_id)
+
+nds <- ecr::doNondominatedSorting(t(df_combined_obj[,1:2]))
+plotly::plot_ly(data = df_combined,
+                type = "scatter3d", mode = "markers",
+                x = ~x1, y = ~x2, z = ~x3,
+                color = log(nds$dom.counter + 1))
