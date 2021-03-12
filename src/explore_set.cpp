@@ -22,7 +22,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   vector<evaluated_point> ridged_points;
   
   // maximum angle deviation during set exploration
-  double max_angle_deviation = 45;
+  double max_angle_deviation = 22.5;
   
   for (int objective = 0; objective < 2; objective++) {
 
@@ -57,9 +57,12 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       double_vector set_direction;
 
       if (set.size() == 1) {
-        set_direction = -normalize(current_gradients[objective]);
+        set_direction = project_feasible_direction(-current_gradients[objective], starting_point.dec_space, lower, upper);
+        set_direction = normalize(set_direction);
       } else {
-        set_direction = normalize(most_recent.dec_space - second_most_recent.dec_space);
+        set_direction = project_feasible_direction(most_recent.dec_space - second_most_recent.dec_space,
+                                                   most_recent.dec_space, lower, upper);
+        set_direction = normalize(set_direction);
       }
       
       if (norm(set_direction) == 0) {
