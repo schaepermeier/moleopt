@@ -136,7 +136,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         }
       }
       
-      if (correction_distance > max_explore_set && set.size() != 1 && force_gradient_direction) {
+      if (norm(most_recent.dec_space - corrected.dec_space) > max_explore_set && set.size() != 1 && force_gradient_direction) {
         // Only executed if step_size == eps_explore_set && force_gradient_direction
         ridged_points.push_back(corrected);
         terminate = true;
@@ -156,10 +156,10 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         // print(step_size);
         // print("");
         
-        force_gradient_direction = false;
-        
-        if (angle_to_corrected > (180 - max_angle_deviation / 2)) {
-          step_size = min(step_size * sqrt(2), max_explore_set);
+        if (force_gradient_direction) {
+          force_gradient_direction = false;
+        } else if (angle_to_corrected > (180 - max_angle_deviation / 2)) {
+          step_size = min(step_size * 2, max_explore_set);
         }
       }
     }
