@@ -66,7 +66,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         
         print("Skipping: Set already explored");
         
-        local_sets[containing_set].insert(pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
+        // local_sets[containing_set].insert(pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
+        insert_into_set(local_sets[containing_set], point_to_explore);
         set_transitions.push_back({origin_set_id, containing_set});
       } else {
         // This point belongs to an unexplored set
@@ -91,6 +92,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         }
       }
     }
+    
+    refine_sets(local_sets, 1e-2 / starting_points_done, mo_function, descent_function);
   }
   
   return {local_sets, set_transitions};
