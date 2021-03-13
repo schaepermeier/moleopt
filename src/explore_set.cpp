@@ -21,8 +21,9 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   // Setup vector for points that crossed a ridge
   vector<evaluated_point> ridged_points;
   
-  // maximum angle deviation during set exploration
-  double max_angle_deviation = 45;
+  
+  double max_angle_deviation = 45; // maximum angle deviation during set exploration
+  double max_step_factor = 2; // max. for difference between two steps in same set
   
   for (int objective = 0; objective < 2; objective++) {
 
@@ -121,9 +122,13 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
 
       if (correction_distance > step_size ||
           angle_to_corrected < (180 - max_angle_deviation)) {
-        print("The angle to corrected was too small " + to_string(angle_to_corrected) +
-              " and/or correction distance too large " + to_string(correction_distance) +
-              "/" + to_string(step_size));
+
+        if (correction_distance > step_size) {
+          print("The correction distance was too large " + to_string(correction_distance) +
+            "/" + to_string(step_size));
+        } else if (angle_to_corrected < (180 - max_angle_deviation)) {
+          print("The angle to corrected was too small " + to_string(angle_to_corrected));
+        }
         
         if (step_size > eps_explore_set) {
           step_size = max(step_size / 2, eps_explore_set);
@@ -158,8 +163,25 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         
         if (force_gradient_direction) {
           force_gradient_direction = false;
-        } else if (angle_to_corrected > (180 - max_angle_deviation / 2)) {
-          step_size = min(step_size * 2, max_explore_set);
+        } else {
+          double angle_deviation = 180 - angle_to_corrected;
+          
+          double step_size_factor;
+          
+          if (angle_deviation == 0) {
+            // Set to max
+            step_size_factor = 2;
+          } else {
+            step_size_factor = max_angle_deviation / angle_deviation;
+            
+            // Keep step size factor reasonable
+            step_size_factor = min(step_size_factor, max_step_factor);
+            step_size_factor = max(step_size_factor, 1 / max_step_factor);
+          }
+          
+          step_size = step_size * step_size_factor;
+          step_size = min(step_size, max_explore_set);
+          step_size = max(step_size, eps_explore_set);
         }
       }
     }
