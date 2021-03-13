@@ -71,7 +71,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       } else {
         // This point belongs to an unexplored set
         
-        print("Exploring new set");
+        print("Exploring new set (No. " + to_string(local_sets.size() + 1) + ")");
         print(point_to_explore.dec_space);
         print("Points left: " + to_string(points_to_explore.size()));
         

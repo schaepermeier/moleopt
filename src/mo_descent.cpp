@@ -304,7 +304,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // print(ref_point);
       }
     
-      print(iters);
+      // print("Iters (MO Descent): " + to_string(iters));
     }
     
     return current_iterate;
