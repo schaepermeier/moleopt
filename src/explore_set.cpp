@@ -22,7 +22,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   vector<evaluated_point> ridged_points;
   
   
-  double max_angle_deviation = 45; // maximum angle deviation during set exploration
+  double max_angle_deviation = 10; // maximum angle deviation during set exploration
   double max_step_factor = 2; // max. for difference between two steps in same set
   
   for (int objective = 0; objective < 2; objective++) {
@@ -55,10 +55,14 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           second_most_recent = (*(++set.rbegin())).second;
         }
       }
+      
+      if (set.size() == 1) {
+        force_gradient_direction = true;
+      }
 
       double_vector set_direction;
 
-      if (set.size() == 1 || force_gradient_direction) {
+      if (force_gradient_direction) {
         set_direction = project_feasible_direction(-current_gradients[objective], starting_point.dec_space, lower, upper);
         set_direction = normalize(set_direction);
       } else {
@@ -77,10 +81,10 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       // Check already that new predicted point is better in tracked objective
 
       if (predicted.obj_space[objective] >= most_recent.obj_space[objective]) {
-        print("Predicted was worse than Most Recent");
+        // print("Predicted was worse than Most Recent");
         
         if (step_size > eps_explore_set) {
-          step_size = max(step_size / 2, eps_explore_set);
+          step_size = max(step_size / max_step_factor, eps_explore_set);
           continue;
         } else {
           if (force_gradient_direction) {
