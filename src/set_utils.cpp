@@ -81,6 +81,9 @@ void insert_into_set(efficient_set& set,
   for (auto& [f1_val, point] : set) {
     if (dominates(new_point.obj_space, point.obj_space)) {
       to_delete.push_back(f1_val);
+    } else if (dominates(point.obj_space, new_point.obj_space)) {
+      // Don't change set, if new point is dominated by it
+      return;
     }
   }
   
@@ -127,28 +130,32 @@ void refine_sets(vector<efficient_set>& sets,
   // Iterate over each set.
   // If one of two neighboring points is nondominated, compute potential HV gain between them
 
-  evaluated_point prev; // "Previous" point along set
-  evaluated_point current; // "Current" point along set
-  
-  bool prev_nondom;
-  bool current_nondom;
-  
   std::vector<std::tuple<double, int, evaluated_point, evaluated_point>> potential_pairs;
 
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
-    current = it->second;
-    current_nondom = (nondominated_points.find(current.obj_space[0])) != nondominated_points.end();
-    it++;
     
+    evaluated_point prev; // "Previous" point along set
+    evaluated_point current; // "Current" point along set
+    
+    bool prev_nondom; // Does the previous point along the set belong to the non-dominated ones?
+    bool current_nondom; // Does the current point along the set belong to the non-dominated ones?
+    
+    current = it->second;
+
+    auto nondom_it = (nondominated_points.find(current.obj_space[0]));
+    current_nondom = (nondom_it != nondominated_points.end()) && ((*nondom_it).second.dec_space == current.dec_space);
+    
+    it++;
+
     for (; it != sets[set_id].end(); it++) {
       prev = current;
       prev_nondom = current_nondom;
       
       current = it->second;
 
-      bool prev_nondom = (nondominated_points.find(prev.obj_space[0])) != nondominated_points.end();
-      bool current_nondom = (nondominated_points.find(current.obj_space[0])) != nondominated_points.end();
+      nondom_it = (nondominated_points.find(current.obj_space[0]));
+      current_nondom = (nondom_it != nondominated_points.end()) && ((*nondom_it).second.dec_space == current.dec_space);
 
       if (prev_nondom || current_nondom) {
         double_vector improvement = current.obj_space - prev.obj_space;
@@ -181,7 +188,7 @@ void refine_sets(vector<efficient_set>& sets,
     if (inbounds(new_point.obj_space, {left.obj_space[0], right.obj_space[1]},
                                       {right.obj_space[0], left.obj_space[1]})) {
       new_point = descent_fn(new_point, new_point.obj_space, inf);
-      
+
       insert_into_set(sets[set_id], new_point);
       
       double_vector improvement;
@@ -189,7 +196,6 @@ void refine_sets(vector<efficient_set>& sets,
       
       // Add {left, new_point}
       
-      improvement = new_point.obj_space - left.obj_space;
       hv_potential = (new_point.obj_space[0] - left.obj_space[0]) *
         (left.obj_space[1] - new_point.obj_space[1]);
       
@@ -199,7 +205,6 @@ void refine_sets(vector<efficient_set>& sets,
       
       // Add {new_point, right}
       
-      improvement = right.obj_space - new_point.obj_space;
       hv_potential = (right.obj_space[0] - new_point.obj_space[0]) *
         (new_point.obj_space[1] - right.obj_space[1]);
       
@@ -209,7 +214,7 @@ void refine_sets(vector<efficient_set>& sets,
       
       print(total_hv_potential / max_hv);
     } else {
-      print("Sad HV Noises");
+      // print("Sad HV Noises");
     }
   
   }
