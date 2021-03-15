@@ -39,6 +39,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     bool force_gradient_direction = false;
 
     while (!terminate) {
+      /* (1) Determine search direction along efficient set */
+      
       // If objective == 0, the most recent points are at the beginning of set
       // If objective == 1, the most recent points are at the end of set
       
@@ -74,6 +76,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (norm(set_direction) == 0) {
         break;
       }
+      
+      /* (2) Perform prediction along efficient set, check integrity */
 
       predicted.dec_space = ensure_boundary(most_recent.dec_space + step_size * set_direction, lower, upper);
       predicted.obj_space = fn(predicted.dec_space);
@@ -95,6 +99,13 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           continue;
         }
       }
+      
+      // TODO terminate early, if dominates(predicted, most_recent)?
+      if (dominates(predicted.obj_space, most_recent.obj_space) && step_size > eps_explore_set) {
+        print("Reduced early!");
+        step_size = max(step_size / max_step_factor, eps_explore_set);
+        continue;
+      }
 
       // double_vector ref_point = {inf, inf};
       // ref_point[objective] = most_recent.obj_space[objective];
@@ -106,6 +117,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       } else {
         max_descent = step_size;
       }
+      
+      /* (3) Correct back to locally efficient point, check integrity */
       
       corrected = descent_fn(predicted, ref_point, max_descent);
 
@@ -145,12 +158,13 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         }
       }
       
+      /* (4) If successful until here, determine if we ridged or are in the same set */
+      
       if (norm(most_recent.dec_space - corrected.dec_space) > max_explore_set && set.size() != 1 && force_gradient_direction) {
         // Only executed if step_size == eps_explore_set && force_gradient_direction
         ridged_points.push_back(corrected);
         terminate = true;
-      } else
-        if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
+      } else if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
         ridged_points.push_back(corrected);
         terminate = true;
       } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
@@ -165,6 +179,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         // print(step_size);
         // print("");
         
+        /* (5) Update step size */
+        
         if (force_gradient_direction) {
           force_gradient_direction = false;
         } else {
@@ -174,10 +190,10 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           
           if (angle_deviation == 0) {
             // Set to max
-            step_size_factor = 2;
+            step_size_factor = max_step_factor;
           } else {
-            step_size_factor = max_angle_deviation / angle_deviation;
-            
+            step_size_factor = (max_angle_deviation / 2) / angle_deviation;
+
             // Keep step size factor reasonable
             step_size_factor = min(step_size_factor, max_step_factor);
             step_size_factor = max(step_size_factor, 1 / max_step_factor);
@@ -190,6 +206,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       }
     }
   }
+  
+  print("Final set size: " + to_string(set.size()) + ", ridged points: " + to_string(ridged_points.size()));
   
   // Explored local set and all "ridged" points
   return {set, ridged_points};
