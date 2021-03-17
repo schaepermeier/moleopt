@@ -2,13 +2,13 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 501L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 1000L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
 
-less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "slow")
+less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "fast")
 
 g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$height) +
   coord_fixed()
@@ -16,22 +16,24 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
 # ========= MOGSA =========
 
-d <- 3
-fid <- 10
-iid <- 6
-fn <- smoof::makeBiObjBBOBFunction(d, fid, iid)
+d <- 2
+fid <- 2
+iid <- 1
+biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
+fn <- biobj_bbob_data$fn
 
 # fn <- smoof::makeWFG5Function(2, 1, 1)
-# fn <- smoof::makeDTLZ2Function(dimensions = 2, n.objectives = 2)
+# fn <- smoof::makeDTLZ1Function(dimensions = 2, n.objectives = 2)
 # fn <- makeAsparFunction(2, 2)
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
 #                                         par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5, -5), upper = c(5, 5)))
 # fn <- smoof::makeMMF4Function()
+# fn <- makeBiObjMPM2Function()
 
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 101
+nstarts <- 100
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
 
@@ -65,8 +67,9 @@ while (run_counter < nruns) {
   
   mogsa_trace <- run_mogsa(f, starting_points,
                               eps_gradient = 1e-8,
-                              eps_initial_step_size = 1e-6,
+                              eps_initial_step_size = 1e-8,
                               eps_explore_set = 1e-4,
+                              # max_explore_set = 1e-3,
                               max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
                               # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
                               # lower = rep(-Inf, length(lower)),
@@ -132,7 +135,9 @@ plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
 # ggplot() +
 #   geom_path(aes(x = x1, y = x2), data = opt.path)
 
-# obj.opt.path <- t(do.call(rbind, lapply(mogsa_trace$sets, function(l) l$obj_space)))
+if (is.null(obj.opt.path)) {
+  obj.opt.path <- t(do.call(rbind, lapply(mogsa_trace$sets, function(l) l$obj_space)))
+}
 
 ncol(obj.opt.path)
 
@@ -148,31 +153,26 @@ sum(nondom) / nrow(obj.opt.path)
 sum(duplicated(obj.opt.path)) / nrow(obj.opt.path)
 # sum(duplicated(opt.path)) / nrow(opt.path)
 
-# ref.point <- apply(obj.opt.path[nondom,1:2], 2, max)
-# ideal.point <- apply(obj.opt.path[nondom,1:2], 2, min)
+# ref_point <- apply(obj.opt.path[nondom,1:2], 2, max)
+# ideal_point <- apply(obj.opt.path[nondom,1:2], 2, min)
 
-fn1 <- smoof::makeBBOBFunction(d, 1, 7)
-fn2 <- smoof::makeBBOBFunction(d, 21, 8)
+ref_point <- biobj_bbob_data$ref_point
+ideal_point <- biobj_bbob_data$ideal_point
 
-ref.point <- c(fn1(smoof::getGlobalOptimum(fn2)$param),
-               fn2(smoof::getGlobalOptimum(fn1)$param))
-ideal.point <- c(smoof::getGlobalOptimum(fn1)$value,
-                 smoof::getGlobalOptimum(fn2)$value)
-
-hv.norm <- prod(ref.point - ideal.point)
-hv = ecr::computeHV(t(as.matrix(obj.opt.path[nondom,1:2])), ref.point = ref.point)
+hv.norm <- prod(ref_point - ideal_point)
+hv <- ecr::computeHV(t(as.matrix(obj.opt.path[nondom,1:2])), ref.point = ref_point)
 hv / hv.norm
 
-log10(5/6 - hv / hv.norm)
-# log10(0.890601509335293 - hv / hv.norm)
+# log10(5/6 - hv / hv.norm)
+log10(0.922987888165046 - hv / hv.norm)
 
 ggplot() +
   geom_point(aes(x = y1, y = y2), data = obj.opt.path[!nondom,], color = "red") +
   geom_point(aes(x = y1, y = y2), data = obj.opt.path[nondom,], color = "green") +
-  geom_point(aes(x = ref.point[1], y = ref.point[2]), shape = "+", size = 5) +
-  geom_point(aes(x = ideal.point[1], y = ideal.point[2]), shape = "+", size = 5) +
-  xlim(ideal.point[1], ref.point[1]) +
-  ylim(ideal.point[2], ref.point[2])
+  geom_point(aes(x = ref_point[1], y = ref_point[2]), shape = "+", size = 5) +
+  geom_point(aes(x = ideal_point[1], y = ideal_point[2]), shape = "+", size = 5) +
+  xlim(ideal_point[1], ref_point[1]) +
+  ylim(ideal_point[2], ref_point[2])
 
 # ggplot() +
 #   geom_point(aes(x = y1, y = y2, color = 1:nrow(obj.opt.path)), data = obj.opt.path)
@@ -194,10 +194,6 @@ prop <- compute_reach_proportions(tbl_transitions, weights)
 set_nd_counts <- compute_nondominated_sets(mogsa_trace$sets)
 node_color <- ifelse(set_nd_counts > 0, "green", "red")
 
-# placement <- Reduce(rbind, set_medians(mogsa_trace$sets))
-# colnames(placement) = c("x", "y")
-# placement <- as.data.frame(placement)
-
 (1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
 
 ggraph(tbl_transitions, layout = "stress") +
@@ -205,6 +201,12 @@ ggraph(tbl_transitions, layout = "stress") +
                 end_cap = circle(4, "mm")) +
   geom_node_point(aes(size = prop), color = node_color) +
   scale_size_area(limits = c(0,1))
+
+## Find Local Search Traps
+
+condensation <- igraph::contract(tbl_transitions, igraph::components(tbl_transitions, mode = "strong")$membership, vertex.attr.comb = "ignore")
+condensation <- igraph::simplify(condensation) # in particular: remove self-loops
+sum(igraph::degree(condensation, mode = "out") == 0)
 
 ### 2D Decision Spaces ###
 
@@ -244,7 +246,7 @@ df_combined_obj <- do.call(rbind, dfs_obj)
 plotly::plot_ly(data = df_combined,
                 type = "scatter3d", mode = "markers",
                 x = ~x1, y = ~x2, z = ~x3,
-                color = df_combined$set_id)
+                color = ~factor(set_id))
 
 nds <- ecr::doNondominatedSorting(t(df_combined_obj[,1:2]))
 plotly::plot_ly(data = df_combined,
