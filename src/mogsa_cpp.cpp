@@ -7,13 +7,13 @@
 #include <cmath>
 
 tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
-    optim_fn mo_function,
-    gradient_fn gradient_function,
-    corrector_fn descent_function,
-    explore_set_fn explore_set_function,
-    vector<double_vector> starting_points,
-    double_vector lower_bounds,
-    double_vector upper_bounds,
+    const optim_fn& mo_function,
+    const gradient_fn& gradient_function,
+    const corrector_fn& descent_function,
+    const explore_set_fn& explore_set_function,
+    const vector<double_vector>& starting_points,
+    const double_vector& lower_bounds,
+    const double_vector& upper_bounds,
     double epsilon_explore_set,
     double epsilon_initial_step_size,
     double maximum_explore_set) {
@@ -110,10 +110,10 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
 }
 
 tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
-    optim_fn mo_function,
-    vector<double_vector> starting_points,
-    double_vector lower,
-    double_vector upper,
+    const optim_fn& mo_function,
+    const vector<double_vector>& starting_points,
+    const double_vector& lower,
+    const double_vector& upper,
     double epsilon_gradient,
     double epsilon_explore_set,
     double epsilon_initial_step_size,

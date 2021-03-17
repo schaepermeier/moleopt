@@ -8,11 +8,11 @@
 
 // === Logging Helper ===
 
-void print(string message);
+void print(const string& message);
 
 void print(double a);
 
-void print(double_vector v);
+void print(const double_vector& v);
 
 // === RNG ===
 

@@ -11,13 +11,13 @@
  * 
 */
 
-gradient_fn create_gradient_fn(optim_fn fn,
+gradient_fn create_gradient_fn(const optim_fn& fn,
                                const double_vector& lower,
                                const double_vector& upper,
                                const string& method,
                                double eps_gradient) {
   
-  gradient_fn g = [fn, lower, upper, method, eps_gradient](const evaluated_point& point) {
+  gradient_fn g = [&fn, &lower, &upper, &method, &eps_gradient](const evaluated_point& point) {
     vector<double_vector> gradients(2);
     int d = point.dec_space.size();
     
@@ -146,7 +146,7 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
 //                                                const double_vector& lower,
 //                                                const double_vector& upper) {
 // 
-//   corrector_fn corr_fn = [fn, grad_fn, eps_initial_step_size, eps_descent_direction, lower, upper]
+//   corrector_fn corr_fn = [&fn, &grad_fn, eps_initial_step_size, eps_descent_direction, &lower, &upper]
 //                          (evaluated_point starting_point, double_vector ref_point, double max_descent) {
 //     
 //     // TODO change to parameter
@@ -303,7 +303,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
                                                const double_vector& lower,
                                                const double_vector& upper) {
   
-  corrector_fn corr_fn = [fn, grad_fn, eps_initial_step_size, eps_descent_direction, lower, upper]
+  corrector_fn corr_fn = [&fn, &grad_fn, eps_initial_step_size, eps_descent_direction, &lower, &upper]
   (evaluated_point starting_point, double_vector ref_point, double max_descent) {
     
     // TODO change to parameter
@@ -456,7 +456,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
 //                                                const double_vector& lower,
 //                                                const double_vector& upper) {
 // 
-//   corrector_fn corr_fn = [fn, grad_fn, eps_initial_step_size, eps_descent_direction, lower, upper]
+//   corrector_fn corr_fn = [&fn, &grad_fn, eps_initial_step_size, eps_descent_direction, &lower, &upper]
 //   (evaluated_point starting_point, double_vector ref_point, double max_descent) {
 // 
 //     // TODO change to parameter

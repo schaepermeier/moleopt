@@ -2,12 +2,12 @@
 #include "vector_utils.h"
 
 tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
-    evaluated_point starting_point,
-    optim_fn fn,
-    gradient_fn grad_fn,
-    corrector_fn descent_fn,
-    double_vector lower,
-    double_vector upper,
+    const evaluated_point& starting_point,
+    const optim_fn& fn,
+    const gradient_fn& grad_fn,
+    const corrector_fn& descent_fn,
+    const double_vector& lower,
+    const double_vector& upper,
     double eps_explore_set,
     double max_explore_set) {
   // Gradients at starting point, used for
@@ -214,15 +214,15 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
 }
 
 explore_set_fn get_explore_set_fn(
-    optim_fn fn,
-    gradient_fn grad_fn,
-    corrector_fn descent_fn,
-    double_vector lower,
-    double_vector upper,
+    const optim_fn& fn,
+    const gradient_fn& grad_fn,
+    const corrector_fn& descent_fn,
+    const double_vector& lower,
+    const double_vector& upper,
     double eps_explore_set,
     double max_explore_set) {
   
-  explore_set_fn f = [fn, grad_fn, descent_fn, lower, upper, eps_explore_set, max_explore_set](evaluated_point starting_point) {
+  explore_set_fn f = [&fn, &grad_fn, &descent_fn, &lower, &upper, eps_explore_set, max_explore_set](const evaluated_point& starting_point) {
     return explore_efficient_set(
       starting_point,
       fn,

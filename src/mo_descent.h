@@ -4,7 +4,7 @@
 #include "vector_utils.h"
 #include "utils.h"
 
-gradient_fn create_gradient_fn(optim_fn fn,
+gradient_fn create_gradient_fn(const optim_fn& fn,
                                const double_vector& lower,
                                const double_vector& upper,
                                const string& method,

@@ -2,7 +2,7 @@
 
 // === Logging Helper ===
 
-void print(string message) {
+void print(const string& message) {
   cout << message << endl;
 }
 
@@ -10,7 +10,7 @@ void print(double a) {
   cout << a << endl;
 }
 
-void print(double_vector v) {
+void print(const double_vector& v) {
   for (const auto& el : v) cout << el << " ";
   
   cout << endl;

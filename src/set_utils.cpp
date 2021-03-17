@@ -73,7 +73,7 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
   return -1;
 }
 
-bool is_nondominated(set<double_vector>& nondominated_points, double_vector& obj_vector) {
+bool is_nondominated(const set<double_vector>& nondominated_points, const double_vector& obj_vector) {
   auto it_lower = nondominated_points.lower_bound(obj_vector);
   
   if (it_lower != nondominated_points.begin()) {
@@ -88,7 +88,7 @@ bool is_nondominated(set<double_vector>& nondominated_points, double_vector& obj
   return true;
 }
 
-void insert_nondominated(set<double_vector>& nondominated_points, double_vector& obj_vector) {
+void insert_nondominated(set<double_vector>& nondominated_points, const double_vector& obj_vector) {
   if (is_nondominated(nondominated_points, obj_vector)) {
     vector<double_vector> to_delete;
     
@@ -133,8 +133,8 @@ bool sort_by_first(const tuple<double, int, evaluated_point, evaluated_point>& a
 
 void refine_sets(vector<efficient_set>& sets,
                  double rel_hv_target,
-                 optim_fn fn,
-                 corrector_fn descent_fn,
+                 const optim_fn& fn,
+                 const corrector_fn& descent_fn,
                  set<double_vector>& nondominated_points) {
   
   // Get objective space coordinates of (approximate) nadir and ideal points
