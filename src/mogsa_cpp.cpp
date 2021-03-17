@@ -1,6 +1,7 @@
 #include "mogsa_cpp.h"
 #include "mo_descent.h"
 #include "set_utils.h"
+#include "explore_set.h"
 #include "utils.h"
 #include <set>
 #include <cmath>
@@ -25,6 +26,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   
   vector<efficient_set> local_sets;
   vector<tuple<int, int>> set_transitions;
+  
+  set<double_vector> nondominated_points;
   
   int starting_points_done = 0;
   
@@ -68,6 +71,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         
         // local_sets[containing_set].insert(pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
         insert_into_set(local_sets[containing_set], point_to_explore);
+        insert_nondominated(nondominated_points, point_to_explore.obj_space);
+        
         set_transitions.push_back({origin_set_id, containing_set});
       } else {
         // This point belongs to an unexplored set
@@ -83,6 +88,10 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         int set_id = local_sets.size();
         local_sets.push_back(set);
         
+        for (auto& [f1_val, point] : set) {
+          insert_nondominated(nondominated_points, point.obj_space);
+        }
+        
         // Log set transition
         set_transitions.push_back({origin_set_id, set_id});
         
@@ -93,8 +102,68 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       }
     }
     
-    refine_sets(local_sets, 1e-2 / starting_points_done, mo_function, descent_function);
+    // refine_sets(local_sets, 1e-5, mo_function, descent_function);
+    refine_sets(local_sets, 1e-2 / starting_points_done, mo_function, descent_function, nondominated_points);
   }
   
   return {local_sets, set_transitions};
 }
+
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
+    optim_fn mo_function,
+    vector<double_vector> starting_points,
+    double_vector lower,
+    double_vector upper,
+    double epsilon_gradient,
+    double epsilon_explore_set,
+    double epsilon_initial_step_size,
+    double max_explore_set) {
+  
+  /* ========= Setup and run Mogsa ========= */
+  
+  // Create Gradient of fn
+  
+  gradient_fn gradient_function = create_gradient_fn(mo_function,
+                                                     lower,
+                                                     upper,
+                                                     "twosided",
+                                                     epsilon_gradient);
+  
+  // Create the descent function
+  
+  corrector_fn descent_function;
+  
+  descent_function = create_two_point_stepsize_descent(mo_function,
+                                                       gradient_function,
+                                                       epsilon_initial_step_size,
+                                                       1e-8,
+                                                       lower,
+                                                       upper);
+  
+  // Create the explore_set function
+  
+  explore_set_fn explore_set_function = get_explore_set_fn(
+    mo_function,
+    gradient_function,
+    descent_function,
+    lower,
+    upper,
+    epsilon_explore_set,
+    max_explore_set);
+  
+  // Run Mogsa
+  
+  return run_mogsa(
+    mo_function,
+    gradient_function,
+    descent_function,
+    explore_set_function,
+    starting_points,
+    lower,
+    upper,
+    epsilon_explore_set,
+    epsilon_initial_step_size,
+    max_explore_set);
+  
+}
+

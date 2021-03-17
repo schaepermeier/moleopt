@@ -1,5 +1,4 @@
 #include "set_utils.h"
-#include <set>
 
 bool inbounds(const double_vector& p,
               const double_vector& lower,
@@ -74,6 +73,39 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
   return -1;
 }
 
+bool is_nondominated(set<double_vector>& nondominated_points, double_vector& obj_vector) {
+  auto it_lower = nondominated_points.lower_bound(obj_vector);
+  
+  if (it_lower != nondominated_points.begin()) {
+    auto& left_neighbor = *(--it_lower);
+    
+    if (obj_vector == left_neighbor ||
+        dominates(left_neighbor, obj_vector)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+void insert_nondominated(set<double_vector>& nondominated_points, double_vector& obj_vector) {
+  if (is_nondominated(nondominated_points, obj_vector)) {
+    vector<double_vector> to_delete;
+    
+    for (auto& nd : nondominated_points) {
+      if (dominates(obj_vector, nd)) {
+        to_delete.push_back(nd);
+      }
+    }
+    
+    for (auto& d : to_delete) {
+      nondominated_points.erase(d);
+    }
+    
+    nondominated_points.insert(obj_vector);
+  }
+}
+
 void insert_into_set(efficient_set& set,
                      const evaluated_point& new_point) {
   double_vector to_delete;
@@ -102,24 +134,18 @@ bool sort_by_first(const tuple<double, int, evaluated_point, evaluated_point>& a
 void refine_sets(vector<efficient_set>& sets,
                  double rel_hv_target,
                  optim_fn fn,
-                 corrector_fn descent_fn) {
-  efficient_set nondominated_points;
-  
-  for (auto& set : sets) {
-    for (auto& [f1_val, point] : set) {
-      insert_into_set(nondominated_points, point);
-    }
-  }
+                 corrector_fn descent_fn,
+                 set<double_vector>& nondominated_points) {
   
   // Get objective space coordinates of (approximate) nadir and ideal points
   
-  evaluated_point opt_f1 = (*(nondominated_points.begin())).second;
-  evaluated_point opt_f2 = (*(nondominated_points.rbegin())).second;
+  double_vector opt_f1 = *(nondominated_points.begin());
+  double_vector opt_f2 = *(nondominated_points.rbegin());
 
-  double lower_f1 = opt_f1.obj_space[0];
-  double upper_f2 = opt_f1.obj_space[1];
-  double upper_f1 = opt_f2.obj_space[0];
-  double lower_f2 = opt_f2.obj_space[1];
+  double lower_f1 = opt_f1[0];
+  double upper_f2 = opt_f1[1];
+  double upper_f1 = opt_f2[0];
+  double lower_f2 = opt_f2[1];
 
   // Maximal HV in this approximated objective space (for normalization)
 
@@ -143,8 +169,8 @@ void refine_sets(vector<efficient_set>& sets,
     
     current = it->second;
 
-    auto nondom_it = (nondominated_points.find(current.obj_space[0]));
-    current_nondom = (nondom_it != nondominated_points.end()) && ((*nondom_it).second.dec_space == current.dec_space);
+    auto nondom_it = (nondominated_points.find(current.obj_space));
+    current_nondom = (nondom_it != nondominated_points.end());
     
     it++;
 
@@ -154,8 +180,8 @@ void refine_sets(vector<efficient_set>& sets,
       
       current = it->second;
 
-      nondom_it = (nondominated_points.find(current.obj_space[0]));
-      current_nondom = (nondom_it != nondominated_points.end()) && ((*nondom_it).second.dec_space == current.dec_space);
+      nondom_it = (nondominated_points.find(current.obj_space));
+      current_nondom = (nondom_it != nondominated_points.end());
 
       if (prev_nondom || current_nondom) {
         double_vector improvement = current.obj_space - prev.obj_space;
@@ -190,6 +216,7 @@ void refine_sets(vector<efficient_set>& sets,
       new_point = descent_fn(new_point, new_point.obj_space, inf);
 
       insert_into_set(sets[set_id], new_point);
+      insert_nondominated(nondominated_points, new_point.obj_space);
       
       double_vector improvement;
       double hv_potential;
@@ -212,12 +239,12 @@ void refine_sets(vector<efficient_set>& sets,
       
       potential_pairs.push_back({hv_potential, set_id, new_point, right});
       
-      print(total_hv_potential / max_hv);
+      // print(total_hv_potential / max_hv);
     } else {
       // print("Sad HV Noises");
     }
   
   }
   
-  print(total_hv_potential / max_hv);
+  // print(total_hv_potential / max_hv);
 }
