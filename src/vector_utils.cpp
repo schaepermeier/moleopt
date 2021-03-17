@@ -63,7 +63,7 @@ double_vector operator/(const double_vector& a, double divisor) {
 }
 
 double_vector operator/(double a, const double_vector& divisor) {
-  assert(divisor != 0);
+  // assert(divisor != 0);
   
   double_vector result;
   result.reserve(divisor.size());
