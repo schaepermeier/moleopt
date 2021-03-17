@@ -27,6 +27,14 @@ makeAsparFunction <- function(dimensions = 2, n.objectives = 2) {
   }
 }
 
+makeBiObjMPM2Function = function(dimensions = 2, n.peaks.1 = 3, topology.1 = "random", seed.1 = 4,
+                                 n.peaks.2 = 3, topology.2 = "random", seed.2 = 8) {
+  f1 <- smoof::makeMPM2Function(n.peaks.1, dimensions, topology.1, seed.1)
+  f2 <- smoof::makeMPM2Function(n.peaks.2, dimensions, topology.2, seed.2)
+  
+  smoof::makeGOMOPFunction(dimensions = dimensions, funs = list(f1, f2))
+}
+
 runif_box <- function(lower, upper) {
   u <- runif(length(lower))
   
