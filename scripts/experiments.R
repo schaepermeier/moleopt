@@ -17,7 +17,7 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 # ========= MOGSA =========
 
 d <- 2
-fid <- 2
+fid <- 1
 iid <- 1
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
@@ -73,7 +73,8 @@ while (run_counter < nruns) {
                               max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
                               # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
                               # lower = rep(-Inf, length(lower)),
-                              # upper = rep(Inf, length(upper))
+                              # upper = rep(Inf, length(upper)),
+                              max_budget = Inf
                            )
 
   if (log_y) {

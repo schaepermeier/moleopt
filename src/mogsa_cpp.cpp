@@ -33,7 +33,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   
   for (double_vector starting_point_dec : starting_points) {
     starting_points_done++;
-    print("Starting point No. " + to_string(starting_points_done));
+    print_info("Starting point No. " + to_string(starting_points_done));
     
     evaluated_point starting_point = {
       starting_point_dec,
@@ -105,6 +105,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     // refine_sets(local_sets, 1e-5, mo_function, descent_function);
     refine_sets(local_sets, 1e-2 / starting_points_done, mo_function, descent_function, nondominated_points);
   }
+  
+  refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
   
   return {local_sets, set_transitions};
 }

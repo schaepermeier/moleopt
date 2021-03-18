@@ -8,6 +8,10 @@
 
 // === Logging Helper ===
 
+extern bool logging_enabled;
+
+void print_info(const string& message);
+
 void print(const string& message);
 
 void print(double a);

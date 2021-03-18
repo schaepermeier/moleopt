@@ -2,13 +2,23 @@
 #include "mogsa_cpp.h"
 #include "mo_descent.h"
 #include "explore_set.h"
+#include "utils.h"
 
 using namespace Rcpp;
 using namespace std;
 
-optim_fn as_optim_fn(Function fn) {
-  optim_fn f = [fn](double_vector x) {
+optim_fn as_optim_fn(Function fn, long& used_budget, long& max_budget) {
+  optim_fn f = [fn, used_budget, max_budget](const double_vector& x) mutable {
+    if (max_budget > 0 && used_budget >= max_budget) {
+      double_vector retval(2, inf);
+      return retval;
+    }
+    
     NumericVector result = fn(x);
+    used_budget++;
+    
+    // print(used_budget);
+    
     return as<double_vector>(result);
   };
   
@@ -79,11 +89,17 @@ List run_mogsa_cpp(
     double epsilon_explore_set,
     double epsilon_initial_step_size,
     double max_explore_set,
-    Nullable<Function> custom_descent_fn = R_NilValue) {
+    Nullable<Function> custom_descent_fn = R_NilValue,
+    long max_budget = inf,
+    bool logging = true) {
+  
+  logging_enabled = logging;
   
   /* ========= Setup and run Mogsa ========= */
   
-  optim_fn mo_function = as_optim_fn(fn);
+  long used_budget = 0;
+  
+  optim_fn mo_function = as_optim_fn(fn, used_budget, max_budget);
   double_vector lower = as<double_vector>(lower_bounds);
   double_vector upper = as<double_vector>(upper_bounds);
   

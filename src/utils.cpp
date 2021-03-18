@@ -2,18 +2,30 @@
 
 // === Logging Helper ===
 
-void print(const string& message) {
+bool logging_enabled = true;
+
+void print_info(const string& message) {
   cout << message << endl;
 }
 
+void print(const string& message) {
+  if (logging_enabled) {
+    cout << message << endl;
+  }
+}
+
 void print(double a) {
-  cout << a << endl;
+  if (logging_enabled) {
+    cout << a << endl;
+  }
 }
 
 void print(const double_vector& v) {
-  for (const auto& el : v) cout << el << " ";
-  
-  cout << endl;
+  if (logging_enabled) {
+    for (const auto& el : v) cout << el << " ";
+    
+    cout << endl;
+  }
 }
 
 // === RNG ===

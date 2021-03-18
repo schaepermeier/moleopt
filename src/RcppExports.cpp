@@ -17,8 +17,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_mogsa_cpp
-List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower_bounds, NumericVector upper_bounds, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set, Nullable<Function> custom_descent_fn);
-RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP, SEXP max_explore_setSEXP, SEXP custom_descent_fnSEXP) {
+List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower_bounds, NumericVector upper_bounds, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set, Nullable<Function> custom_descent_fn, long max_budget, bool logging);
+RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP, SEXP max_explore_setSEXP, SEXP custom_descent_fnSEXP, SEXP max_budgetSEXP, SEXP loggingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -31,14 +31,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type epsilon_initial_step_size(epsilon_initial_step_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type max_explore_set(max_explore_setSEXP);
     Rcpp::traits::input_parameter< Nullable<Function> >::type custom_descent_fn(custom_descent_fnSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set, custom_descent_fn));
+    Rcpp::traits::input_parameter< long >::type max_budget(max_budgetSEXP);
+    Rcpp::traits::input_parameter< bool >::type logging(loggingSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set, custom_descent_fn, max_budget, logging));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mogsacpp_nondominated", (DL_FUNC) &_mogsacpp_nondominated, 1},
-    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 9},
+    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 11},
     {NULL, NULL, 0}
 };
 
