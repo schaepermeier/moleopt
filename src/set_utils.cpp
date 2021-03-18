@@ -158,9 +158,8 @@ double angle_at_point(const efficient_set& set,
     // Found corresponding point
     evaluated_point left;
     
-    --it;
-    
     if (it != set.begin()) {
+      --it;
       left = (*it).second;
     } else {
       return 0.0;
