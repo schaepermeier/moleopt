@@ -222,7 +222,7 @@ explore_set_fn get_explore_set_fn(
     double eps_explore_set,
     double max_explore_set) {
   
-  explore_set_fn f = [fn, grad_fn, descent_fn, lower, upper, eps_explore_set, max_explore_set]
+  explore_set_fn f = [&fn, &grad_fn, &descent_fn, lower, upper, eps_explore_set, max_explore_set]
   (const evaluated_point& starting_point) mutable {
     return explore_efficient_set(
       starting_point,

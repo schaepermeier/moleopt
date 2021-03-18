@@ -17,7 +17,7 @@ gradient_fn create_gradient_fn(const optim_fn& fn,
                                const string& method,
                                double eps_gradient) {
   
-  gradient_fn g = [fn, lower, upper, method, eps_gradient](const evaluated_point& point) mutable {
+  gradient_fn g = [&fn, lower, upper, method, eps_gradient](const evaluated_point& point) mutable {
     vector<double_vector> gradients(2);
     int d = point.dec_space.size();
     
