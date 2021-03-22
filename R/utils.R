@@ -35,6 +35,24 @@ makeBiObjMPM2Function = function(dimensions = 2, n.peaks.1 = 3, topology.1 = "ra
   smoof::makeGOMOPFunction(dimensions = dimensions, funs = list(f1, f2))
 }
 
+makeBiRosenbrockFunction = function() {
+  f1 <- function(x) {
+    (1 - x[1]) ** 2 + 1 * (x[2] - x[1] ** 2) ** 2
+  }
+  
+  f2 <- function(x) {
+    (1 + x[1]) ** 2 + 1 * (-(x[2] - 3) - x[1] ** 2) ** 2
+  }
+  
+  f <- function(x) {
+    c(f1(x), f2(x))
+  }
+  
+  smoof::makeMultiObjectiveFunction(
+    name = "Bi-Rosenbrock", id = "bi_rosenbrock_function", description = "", fn = f,
+    par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-2, 0), upper = c(2, 3)))
+}
+
 runif_box <- function(lower, upper) {
   u <- runif(length(lower))
   
