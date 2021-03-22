@@ -63,6 +63,9 @@ generateBiObjBBOBData <- function(dimensions, fid, iid) {
     vectorized = FALSE
   )
   
+  output$opt_f1 <- smoof::getGlobalOptimum(fn_1)$param
+  output$opt_f2 <- smoof::getGlobalOptimum(fn_2)$param
+  
   output$ref_point <- c(fn_1(smoof::getGlobalOptimum(fn_2)$param),
                         fn_2(smoof::getGlobalOptimum(fn_1)$param))
   
