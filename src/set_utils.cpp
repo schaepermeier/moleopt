@@ -151,7 +151,7 @@ void insert_into_set(efficient_set& set,
 }
 
 double angle_at_point(const efficient_set& set,
-                      evaluated_point p) {
+                      const evaluated_point& p) {
   auto it = set.find(p.obj_space[0]);
   
   if (it != set.end()) {
@@ -215,6 +215,8 @@ void refine_sets(vector<efficient_set>& sets,
 
   std::set<std::tuple<double, int, evaluated_point, evaluated_point>, decltype(sort_by_first)> potential_pairs(sort_by_first);
 
+  print_info("Setup Potential Pairs");
+  
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
     
@@ -258,31 +260,35 @@ void refine_sets(vector<efficient_set>& sets,
     }
   }
   
+  print_info("HV Optim");
+  
+  evaluated_point new_point;
+  double angle;
+  double expected_max_descent;
+
   while (total_hv_potential / max_hv > rel_hv_target && potential_pairs.size() > 0) {
     auto [hv_potential, set_id, left, right] = *(potential_pairs.rbegin());
+    potential_pairs.erase(*(potential_pairs.rbegin()));
 
     total_hv_potential -= hv_potential;
-    potential_pairs.erase({hv_potential, set_id, left, right});
     
-    evaluated_point new_point;
     new_point.dec_space = (left.dec_space + right.dec_space) / 2;
     new_point.obj_space = fn(new_point.dec_space);
 
     if (inbounds(new_point.obj_space, {left.obj_space[0], right.obj_space[1]},
                                       {right.obj_space[0], left.obj_space[1]})) {
 
-      double angle = min(angle_at_point(sets[set_id], left),
+      angle = min(angle_at_point(sets[set_id], left),
                          angle_at_point(sets[set_id], right));
       
-      if (!isnan(angle) && angle < 179.99) {
+      expected_max_descent = 0.5 * norm(left.dec_space - right.dec_space) / tan(angle / 180 * M_PI / 2);
+
+      if (!isnan(expected_max_descent) && expected_max_descent > 1e-6) {
         new_point = descent_fn(new_point, new_point.obj_space, inf);
       }
 
       insert_into_set(sets[set_id], new_point);
       insert_nondominated(nondominated_points, new_point.obj_space);
-      
-      double_vector improvement;
-      double hv_potential;
       
       // Add {left, new_point}
       
