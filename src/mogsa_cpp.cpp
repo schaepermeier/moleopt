@@ -28,17 +28,27 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   vector<tuple<int, int>> set_transitions;
   
   set<double_vector> nondominated_points;
-  
+
   int starting_points_done = 0;
+  
+  bool budget_depleted = false;
   
   for (double_vector starting_point_dec : starting_points) {
     starting_points_done++;
+    bool nondom_set_in_iter = false;
     print_info("Starting point No. " + to_string(starting_points_done));
     
     evaluated_point starting_point = {
       starting_point_dec,
       mo_function(starting_point_dec)
     };
+    
+    if (budget_depleted) {
+      // Terminate if budget is empty, i.e.
+      // fn == inf
+      print_info("Terminating: Budget used up!");
+      break;
+    }
     
     double_vector ref_point_offset = {0, 0};
     // double_vector ref_point_offset = {inf, inf};
@@ -55,9 +65,16 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       {starting_point, -1}
     };
 
-    while (points_to_explore.size() > 0) {
+    while (points_to_explore.size() > 0 && local_sets.size() < 1000) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
       points_to_explore.pop_back();
+      
+      if (point_to_explore.obj_space[0] == inf) {
+        // Terminate if budget is empty, i.e.
+        // fn == inf
+        budget_depleted = true;
+        break;
+      }
       
       // Validate that chosen point does not belong to an already explored set
       
@@ -67,7 +84,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         // This set was already explored before.
         // Log the set transition and continue.
         
-        print("Skipping: Set already explored");
+        print_info("Skipping: Set already explored");
         
         // local_sets[containing_set].insert(pair<double, evaluated_point>(point_to_explore.obj_space[0], point_to_explore));
         insert_into_set(local_sets[containing_set], point_to_explore);
@@ -77,7 +94,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       } else {
         // This point belongs to an unexplored set
         
-        print("Exploring new set (No. " + to_string(local_sets.size() + 1) + ")");
+        print_info("Exploring new set (No. " + to_string(local_sets.size() + 1) + ")");
         print(point_to_explore.dec_space);
         print("Points left: " + to_string(points_to_explore.size()));
         
@@ -88,8 +105,16 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         int set_id = local_sets.size();
         local_sets.push_back(set);
         
+        int nondom_before = nondominated_points.size();
+        
+        print_info("Inserting points nondominated");
+        
         for (auto& [f1_val, point] : set) {
           insert_nondominated(nondominated_points, point.obj_space);
+        }
+        
+        if (nondominated_points.size() > nondom_before) {
+         nondom_set_in_iter = true;
         }
         
         // Log set transition
@@ -99,14 +124,26 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         for (evaluated_point point : ridged_points) {
           points_to_explore.push_back({point, set_id});
         }
+        
+        print_info("Finished exploration");
+      }
+      
+      if (local_sets.size() >= 1000) {
+        break;
       }
     }
     
-    // refine_sets(local_sets, 1e-5, mo_function, descent_function);
-    refine_sets(local_sets, 1e-2 / starting_points_done, mo_function, descent_function, nondominated_points);
+    if (starting_points_done == 10 || (starting_points_done > 10 && nondom_set_in_iter)) {
+      refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
+      break;
+    }
   }
   
-  refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
+  if (!budget_depleted) {
+    refine_sets(local_sets, 1e-5, mo_function, descent_function, nondominated_points);
+  }
+  
+  print(nondominated_points.size());
   
   return {local_sets, set_transitions};
 }
