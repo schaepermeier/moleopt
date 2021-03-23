@@ -215,8 +215,6 @@ void refine_sets(vector<efficient_set>& sets,
 
   std::set<std::tuple<double, int, evaluated_point, evaluated_point>, decltype(sort_by_first)> potential_pairs(sort_by_first);
 
-  print_info("Setup Potential Pairs");
-  
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
     
@@ -259,8 +257,6 @@ void refine_sets(vector<efficient_set>& sets,
       }
     }
   }
-  
-  print_info("HV Optim");
   
   evaluated_point new_point;
   double angle;
