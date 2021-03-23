@@ -123,10 +123,6 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
           points_to_explore.push_back({point, set_id});
         }
       }
-      
-      if (local_sets.size() >= 1000) {
-        break;
-      }
     }
     
     if (starting_points_done == 10 || (starting_points_done > 10 && nondom_set_in_iter)) {
@@ -135,7 +131,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   }
   
   if (!budget_depleted) {
-    refine_sets(local_sets, 1e-5, mo_function, descent_function, nondominated_points);
+    refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
   }
   
   print(nondominated_points.size());
