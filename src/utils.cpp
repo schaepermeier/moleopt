@@ -2,7 +2,7 @@
 
 // === Logging Helper ===
 
-extern MOLE_LOG_LEVEL_ENUM MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_INFO;
+MOLE_LOG_LEVEL_ENUM MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_INFO;
 
 void print_info(const string& message) {
   if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_INFO) {
