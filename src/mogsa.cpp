@@ -91,9 +91,15 @@ List run_mogsa_cpp(
     double max_explore_set,
     Nullable<Function> custom_descent_fn = R_NilValue,
     long max_budget = inf,
-    bool logging = true) {
+    std::string logging = "info") {
   
-  logging_enabled = logging;
+  if (logging == "none") {
+    MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_NONE;
+  } else if (logging == "debug") {
+    MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_DEBUG;
+  } else {
+    MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_INFO;
+  }
   
   /* ========= Setup and run Mogsa ========= */
   

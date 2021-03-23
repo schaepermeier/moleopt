@@ -2,26 +2,28 @@
 
 // === Logging Helper ===
 
-bool logging_enabled = true;
+extern MOLE_LOG_LEVEL_ENUM MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_INFO;
 
 void print_info(const string& message) {
-  cout << message << endl;
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_INFO) {
+    cout << message << endl;
+  }
 }
 
 void print(const string& message) {
-  if (logging_enabled) {
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_DEBUG) {
     cout << message << endl;
   }
 }
 
 void print(double a) {
-  if (logging_enabled) {
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_DEBUG) {
     cout << a << endl;
   }
 }
 
 void print(const double_vector& v) {
-  if (logging_enabled) {
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_DEBUG) {
     for (const auto& el : v) cout << el << " ";
     
     cout << endl;

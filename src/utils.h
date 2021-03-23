@@ -8,7 +8,13 @@
 
 // === Logging Helper ===
 
-extern bool logging_enabled;
+enum MOLE_LOG_LEVEL_ENUM {
+  MOLE_LOG_LEVEL_NONE = 0,
+  MOLE_LOG_LEVEL_INFO,
+  MOLE_LOG_LEVEL_DEBUG
+};
+
+extern MOLE_LOG_LEVEL_ENUM MOLE_LOG_LEVEL;
 
 void print_info(const string& message);
 

@@ -1,7 +1,7 @@
 #' @export
 run_mogsa <- function(fn, starting_points,
                       eps_gradient = 1e-8, eps_initial_step_size = 1e-6, eps_explore_set = 1e-4, max_explore_set = 1e-2,
-                      custom_descent_fn = NULL, lower = NULL, upper = NULL, max_budget = Inf, logging = TRUE) {
+                      custom_descent_fn = NULL, lower = NULL, upper = NULL, max_budget = Inf, logging = "info") {
   if (is.null(lower)) {
     lower <- smoof::getLowerBoxConstraints(fn)
   }
