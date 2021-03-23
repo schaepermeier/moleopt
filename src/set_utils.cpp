@@ -16,17 +16,21 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
                          const evaluated_point& new_point,
                          double epsilon) {
   int containing_set = -1;
-  
+  double epsilon_squared = epsilon * epsilon;
+
   for (auto& set : local_sets) {
     containing_set++;
     
     // Check whether the new point is in the "box" of the
     // objective values covered by the given set
     
-    double lower_f1 = (*(set.begin())).second.obj_space[0];
-    double upper_f2 = (*(set.begin())).second.obj_space[1];
-    double upper_f1 = (*(set.rbegin())).second.obj_space[0];
-    double lower_f2 = (*(set.rbegin())).second.obj_space[1];
+    auto& left_bound = (*(set.begin())).second;
+    auto& right_bound = (*(set.rbegin())).second;
+    
+    double lower_f1 = left_bound.obj_space[0];
+    double upper_f2 = left_bound.obj_space[1];
+    double upper_f1 = right_bound.obj_space[0];
+    double lower_f2 = right_bound.obj_space[1];
     
     if (inbounds(new_point.obj_space, {lower_f1, lower_f2}, {upper_f1, upper_f2})) {
       
@@ -44,26 +48,27 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
         if (inbounds(new_point.obj_space, {left_neighbor.obj_space[0], right_neighbor.obj_space[1]},
                                           {right_neighbor.obj_space[0], left_neighbor.obj_space[1]})) {
           
-          double norm_to_left = norm(new_point.dec_space - left_neighbor.dec_space);
-          double norm_to_right = norm(new_point.dec_space - right_neighbor.dec_space);
-          double norm_left_right = norm(left_neighbor.dec_space - right_neighbor.dec_space);
+          double snorm_to_left = square_norm(new_point.dec_space - left_neighbor.dec_space);
+          double snorm_to_right = square_norm(new_point.dec_space - right_neighbor.dec_space);
+          double snorm_left_right = square_norm(left_neighbor.dec_space - right_neighbor.dec_space);
           
           // Check that they have at most an angle of 90 degrees in decision space
           
-          if ((norm_to_left * norm_to_left + norm_to_right * norm_to_right) <= (norm_left_right * norm_left_right + epsilon)) {
+          if (snorm_to_left <= epsilon_squared ||
+              snorm_to_right <= epsilon_squared ||
+              (snorm_to_left + snorm_to_right) <= (snorm_left_right)) {
             return containing_set;
           }
         }
       }
     }
     
-    // Additionally, check whether the selected point is epsilon close to
-    // any logged point in any set.
-    for (auto& [f1_val, point] : set) {
-      // avoid squareroot with square_norm
-      if (square_norm(new_point.dec_space - point.dec_space) < epsilon * epsilon) {
-        return containing_set;
-      }
+    // avoiding sqrt with square_norm
+    if (square_norm(new_point.dec_space - left_bound.dec_space) <= epsilon_squared ||
+        square_norm(new_point.dec_space - right_bound.dec_space) <= epsilon_squared) {
+      // Additionally, check whether the selected point is epsilon close to
+      // any of the endpoints.
+      return containing_set;
     }
   }
   
