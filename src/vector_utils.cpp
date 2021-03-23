@@ -1,6 +1,7 @@
 #include "vector_utils.h"
 #include <cmath>
 #include <algorithm>
+#include <numeric>
 
 using namespace std;
 
@@ -62,16 +63,6 @@ double_vector operator/(const double_vector& a, double divisor) {
   return result;
 }
 
-double_vector operator/(double a, const double_vector& divisor) {
-  // assert(divisor != 0);
-  
-  double_vector result;
-  result.reserve(divisor.size());
-  
-  transform(divisor.begin(), divisor.end(), back_inserter(result), [&](double v){return a / v;});
-  return result;
-}
-
 bool dominates(const double_vector& a, const double_vector& b) {
   assert(a.size() == b.size());
   
@@ -98,30 +89,17 @@ bool strictly_dominates(const double_vector& a, const double_vector& b) {
   return a_strictly_better;
 }
 
-double square_norm(const double_vector& vector) {
-  double square_norm = 0;
-  
-  for (double value : vector) {
-    square_norm += value * value;
-  }
-  
-  return square_norm;
-}
-
 double norm(const double_vector& vector) {
-  return sqrt(square_norm(vector));
+  return sqrt(dot(vector, vector));
+}
+double square_norm(const double_vector& vector) {
+  return dot(vector, vector);
 }
 
 double dot(const double_vector& a, const double_vector& b) {
   assert(a.size() == b.size());
   
-  double result = 0;
-  
-  for (int i = 0; i < a.size(); i++) {
-    result += a[i] * b[i];
-  }
-  
-  return result;
+  return inner_product(a.begin(), a.end(), b.begin(), 0.0);
 }
 
 double angle(const double_vector& a, const double_vector& b) {
@@ -133,33 +111,27 @@ double angle(const double_vector& a, const double_vector& b) {
   }
   
   double rad = acos(enumerator / denominator);
-  double pi = atan(1) * 4;
-  
-  double angle = 180 * rad / pi;
+  double angle = 180 * rad / M_PI;
   
   angle = max(min(angle, 180.0), 0.0);
   
   return angle;
 }
 
-double_vector ensure_boundary(const double_vector& vector, const double_vector& lower, const double_vector& upper) {
+void ensure_boundary(double_vector& vector, const double_vector& lower, const double_vector& upper) {
   assert(vector.size() == lower.size());
   assert(vector.size() == upper.size());
-  
-  double_vector result(vector.size());
-  
+
   for (int i = 0; i < vector.size(); i++) {
-    result[i] = min(max(vector[i], lower[i]), upper[i]);
+    vector[i] = min(max(vector[i], lower[i]), upper[i]);
   }
-  
-  return result;
 }
 
 double_vector normalize(const double_vector& vector) {
   double length = norm(vector);
   
-  if (length == 0) {
-    return vector;
+  if (length == 0.0) {
+    return 0.0 * vector;
   } else {
     return vector / length;
   }
@@ -181,25 +153,21 @@ double compute_improvement(const double_vector& obj_space, const double_vector& 
   }
 }
 
-double_vector project_feasible_direction(const double_vector& search_direction, const double_vector& current_position,
-                                         const double_vector& lower, const double_vector& upper) {
+void project_feasible_direction(double_vector& search_direction, const double_vector& current_position,
+                                const double_vector& lower, const double_vector& upper) {
   assert(search_direction.size() == lower.size());
   assert(search_direction.size() == upper.size());
   assert(search_direction.size() == current_position.size());
-  
-  double_vector feasible_direction(search_direction.size());
-  
-  for (int i = 0; i < feasible_direction.size(); i++) {
+
+  for (int i = 0; i < search_direction.size(); i++) {
     if (current_position[i] == upper[i]) {
       // only negative direction allowed
-      feasible_direction[i] = min(search_direction[i], 0.0);
+      search_direction[i] = min(search_direction[i], 0.0);
     } else if (current_position[i] == lower[i]) {
       // only positive direction allowed
-      feasible_direction[i] = max(search_direction[i], 0.0);
+      search_direction[i] = max(search_direction[i], 0.0);
     } else {
-      feasible_direction[i] = search_direction[i];
+      search_direction[i] = search_direction[i];
     }
   }
-  
-  return feasible_direction;
 }

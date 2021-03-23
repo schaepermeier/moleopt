@@ -21,8 +21,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   // Setup vector for points that crossed a ridge
   vector<evaluated_point> ridged_points;
   
-  
-  double max_angle_deviation = 10; // maximum angle deviation during set exploration
+  double max_angle_deviation = 45; // maximum angle deviation during set exploration
   double max_step_factor = 2; // max. for difference between two steps in same set
   
   for (int objective = 0; objective < 2; objective++) {
@@ -32,6 +31,9 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     evaluated_point second_most_recent;
     evaluated_point predicted;
     evaluated_point corrected;
+    
+    double_vector set_direction;
+    double_vector ref_point;
 
     double step_size = eps_explore_set;
 
@@ -62,24 +64,24 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
         force_gradient_direction = true;
       }
 
-      double_vector set_direction;
-
       if (force_gradient_direction) {
-        set_direction = project_feasible_direction(-current_gradients[objective], starting_point.dec_space, lower, upper);
-        set_direction = normalize(set_direction);
+        set_direction = -current_gradients[objective];
       } else {
-        set_direction = project_feasible_direction(most_recent.dec_space - second_most_recent.dec_space,
-                                                   most_recent.dec_space, lower, upper);
-        set_direction = normalize(set_direction);
+        set_direction = most_recent.dec_space - second_most_recent.dec_space;
       }
+      
+      project_feasible_direction(set_direction, most_recent.dec_space, lower, upper);
       
       if (norm(set_direction) == 0) {
         break;
       }
       
+      set_direction = normalize(set_direction);
+      
       /* (2) Perform prediction along efficient set, check integrity */
 
-      predicted.dec_space = ensure_boundary(most_recent.dec_space + step_size * set_direction, lower, upper);
+      predicted.dec_space = most_recent.dec_space + step_size * set_direction;
+      ensure_boundary(predicted.dec_space, lower, upper);
       predicted.obj_space = fn(predicted.dec_space);
 
       // Check already that new predicted point is better in tracked objective
@@ -109,7 +111,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
 
       // double_vector ref_point = {inf, inf};
       // ref_point[objective] = most_recent.obj_space[objective];
-      double_vector ref_point = predicted.obj_space;
+      ref_point = predicted.obj_space;
       
       double max_descent;
       if (step_size == eps_explore_set && force_gradient_direction) {
@@ -160,16 +162,12 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       
       /* (4) If successful until here, determine if we ridged or are in the same set */
       
-      if (norm(most_recent.dec_space - corrected.dec_space) > max_explore_set && set.size() != 1 && force_gradient_direction) {
+      if (norm(most_recent.dec_space - corrected.dec_space) > max_explore_set && force_gradient_direction) {
         // Only executed if step_size == eps_explore_set && force_gradient_direction
         ridged_points.push_back(corrected);
         terminate = true;
-      } else if (strictly_dominates(corrected.obj_space, most_recent.obj_space)) {
-        ridged_points.push_back(corrected);
-        terminate = true;
       } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
-        // We hit a weakly dominated area!
-        print("Bruh");
+        ridged_points.push_back(corrected);
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});

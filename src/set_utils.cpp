@@ -60,7 +60,8 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
     // Additionally, check whether the selected point is epsilon close to
     // any logged point in any set.
     for (auto& [f1_val, point] : set) {
-      if (norm(new_point.dec_space - point.dec_space) < epsilon) {
+      // avoid squareroot with square_norm
+      if (square_norm(new_point.dec_space - point.dec_space) < epsilon * epsilon) {
         return containing_set;
       }
     }
