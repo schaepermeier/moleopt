@@ -107,8 +107,6 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         
         int nondom_before = nondominated_points.size();
         
-        print_info("Inserting points nondominated");
-        
         for (auto& [f1_val, point] : set) {
           insert_nondominated(nondominated_points, point.obj_space);
         }
@@ -124,8 +122,6 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         for (evaluated_point point : ridged_points) {
           points_to_explore.push_back({point, set_id});
         }
-        
-        print_info("Finished exploration");
       }
       
       if (local_sets.size() >= 1000) {
@@ -135,7 +131,6 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     
     if (starting_points_done == 10 || (starting_points_done > 10 && nondom_set_in_iter)) {
       refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
-      break;
     }
   }
   
