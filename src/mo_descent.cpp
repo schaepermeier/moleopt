@@ -227,7 +227,6 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
 
         // Barzilai-Borwein
         double alpha_bb = (dot(sk, sk) / dot(sk, -yk));
-        // double alpha_bb = (dot(sk, -yk) / dot(yk, yk));
         double alpha_pos = norm(sk) / norm(yk);
 
         if (alpha_bb <= 0) {
@@ -247,27 +246,21 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           dot(normalize(descent_direction), -gradients[0]),
           dot(normalize(descent_direction), -gradients[1])
         };
+        
+        trial_point.dec_space = current_iterate.dec_space + alpha * descent_direction;
+        ensure_boundary(trial_point.dec_space, lower, upper);
+        
+        trial_point.obj_space = fn(trial_point.dec_space);
 
-        // print(expected_improvements);
-
-        // Decreased once too often below
-        alpha *= descent_scale_factor;
-
-        do {
-          alpha /= descent_scale_factor;
-
+        while (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) &&
+                alpha > descent_step_min / norm(descent_direction)) {
+          alpha = max(alpha / descent_scale_factor, descent_step_min / norm(descent_direction));
+          
           trial_point.dec_space = current_iterate.dec_space + alpha * descent_direction;
           ensure_boundary(trial_point.dec_space, lower, upper);
           
           trial_point.obj_space = fn(trial_point.dec_space);
-        } while (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) &&
-                  alpha * norm(descent_direction) >= descent_step_min
-        );
-        
-        // while (alpha >= descent_step_min &&
-        //        !dominates(trial_point.obj_space - descent_armijo_factor * alpha * expected_improvements, ref_point)) {
-        //   
-        // }
+        }
 
         if (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) ||
             (alpha * norm(descent_direction) <= descent_step_min && !dominates(trial_point.obj_space, current_iterate.obj_space))) {
