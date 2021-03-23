@@ -277,17 +277,17 @@ void refine_sets(vector<efficient_set>& sets,
     new_point.dec_space = (left.dec_space + right.dec_space) / 2;
     new_point.obj_space = fn(new_point.dec_space);
 
+    angle = min(angle_at_point(sets[set_id], left),
+                       angle_at_point(sets[set_id], right));
+    
+    expected_max_descent = 0.5 * norm(left.dec_space - right.dec_space) / tan(angle / 180 * M_PI / 2);
+
+    if (!isnan(expected_max_descent) && expected_max_descent > 1e-6) {
+      new_point = descent_fn(new_point, new_point.obj_space, inf);
+    }
+
     if (inbounds(new_point.obj_space, {left.obj_space[0], right.obj_space[1]},
                                       {right.obj_space[0], left.obj_space[1]})) {
-
-      angle = min(angle_at_point(sets[set_id], left),
-                         angle_at_point(sets[set_id], right));
-      
-      expected_max_descent = 0.5 * norm(left.dec_space - right.dec_space) / tan(angle / 180 * M_PI / 2);
-
-      if (!isnan(expected_max_descent) && expected_max_descent > 1e-6) {
-        new_point = descent_fn(new_point, new_point.obj_space, inf);
-      }
 
       insert_into_set(sets[set_id], new_point);
       insert_nondominated(nondominated_points, new_point.obj_space);
@@ -312,7 +312,7 @@ void refine_sets(vector<efficient_set>& sets,
       
       // print(total_hv_potential / max_hv);
     } else {
-      // print("Sad HV Noises");
+      print_info("Sad HV Noises");
     }
   
   }
