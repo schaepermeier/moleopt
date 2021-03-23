@@ -2,7 +2,7 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 1000L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 501L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
@@ -17,12 +17,12 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 # ========= MOGSA =========
 
 d <- 2
-fid <- 1
+fid <- 2
 iid <- 1
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
-# fn <- smoof::makeWFG5Function(2, 1, 1)
+# fn <- smoof::makeWFG1Function(2)
 # fn <- smoof::makeDTLZ1Function(dimensions = 2, n.objectives = 2)
 # fn <- makeAsparFunction(2, 2)
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
@@ -49,32 +49,33 @@ run_counter <- 0
 
 while (run_counter < nruns) {
   cat(paste0("New run, ID: ", run_counter, ", currently at: ", ncol(obj.opt.path), "\n"))
-  
+
   f <- fn
-  
+
   if (log_x || log_y) {
     f <- smoof::addLoggingWrapper(f, logg.x = log_x, logg.y = log_y)
   }
-  
+
   if (count_evals) {
     f <- smoof::addCountingWrapper(f)
   }
-  
+
   if (run_counter > 0) {
     starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
     starting_points <- do.call(rbind, starting_points)
   }
-  
+
   mogsa_trace <- run_mogsa(f, starting_points,
                               eps_gradient = 1e-8,
-                              eps_initial_step_size = 1e-8,
+                              eps_initial_step_size = 1e-6,
                               eps_explore_set = 1e-4,
                               # max_explore_set = 1e-3,
                               max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
                               # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
-                              # lower = rep(-Inf, length(lower)),
-                              # upper = rep(Inf, length(upper)),
-                              max_budget = Inf
+                              # lower = rep(-100, length(lower)),
+                              # upper = rep(100, length(upper)),
+                              max_budget = 10000,
+                              logging = FALSE
                            )
 
   if (log_y) {
@@ -84,7 +85,7 @@ while (run_counter < nruns) {
       obj.opt.path <- cbind(obj.opt.path, smoof::getLoggedValues(f)$obj.vals)
     }
   }
-  
+
   if (log_x) {
     if (is.null(opt.path)) {
       opt.path <- smoof::getLoggedValues(f)$pars
@@ -96,7 +97,7 @@ while (run_counter < nruns) {
   if (count_evals) {
     cat("No. Evals: ", paste0(smoof::getNumberOfEvaluations(f), "\n"))
   }
-  
+
   run_counter <- run_counter + 1
 }
 
@@ -198,10 +199,12 @@ node_color <- ifelse(set_nd_counts > 0, "green", "red")
 (1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
 
 ggraph(tbl_transitions, layout = "stress") +
+  geom_node_point(aes(size = 1), color = "gray") +
+  geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
-  geom_node_point(aes(size = prop), color = node_color) +
-  scale_size_area(limits = c(0,1))
+  scale_size_area(limits = c(0,1)) +
+  theme(panel.background = element_rect(fill = "transparent"))
 
 ## Find Local Search Traps
 
@@ -214,12 +217,14 @@ sum(igraph::degree(condensation, mode = "out") == 0)
 node_pos <- set_medians(mogsa_trace$sets)
 
 ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
+  geom_node_point(aes(size = 1), color = "gray") +
+  geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
-  geom_node_point(aes(size = prop), color = node_color) +
   scale_size_area(limits = c(0,1)) +
   coord_fixed() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent"))
 
 
 
