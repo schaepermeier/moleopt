@@ -188,7 +188,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     lower,
     upper,
     epsilon_explore_set,
-    max_explore_set);
+    max_explore_set,
+    45,
+    2);
   
   // Run Mogsa
   

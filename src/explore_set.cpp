@@ -8,8 +8,10 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     const corrector_fn& descent_fn,
     const double_vector& lower,
     const double_vector& upper,
-    double eps_explore_set,
-    double max_explore_set) {
+    double explore_step_min,
+    double explore_step_max,
+    double explore_angle_max,
+    double explore_scale_factor) {
   // Gradients at starting point, used for
   // first extrapolation in each direction
   vector<double_vector> current_gradients = grad_fn(starting_point);
@@ -20,10 +22,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
   
   // Setup vector for points that crossed a ridge
   vector<evaluated_point> ridged_points;
-  
-  double max_angle_deviation = 45; // maximum angle deviation during set exploration
-  double max_step_factor = 2; // max. for difference between two steps in same set
-  
+
   for (int objective = 0; objective < 2; objective++) {
 
     // Some helper objects
@@ -35,7 +34,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
     double_vector set_direction;
     double_vector ref_point;
 
-    double step_size = eps_explore_set;
+    double step_size = explore_step_min;
 
     bool terminate = false;
     bool force_gradient_direction = false;
@@ -89,8 +88,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (predicted.obj_space[objective] >= most_recent.obj_space[objective]) {
         // print("Predicted was worse than Most Recent");
         
-        if (step_size > eps_explore_set) {
-          step_size = max(step_size / max_step_factor, eps_explore_set);
+        if (step_size > explore_step_min) {
+          step_size = max(step_size / explore_scale_factor, explore_step_min);
           continue;
         } else {
           if (force_gradient_direction) {
@@ -103,9 +102,9 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       }
       
       // TODO terminate early, if dominates(predicted, most_recent)?
-      if (dominates(predicted.obj_space, most_recent.obj_space) && step_size > eps_explore_set) {
+      if (dominates(predicted.obj_space, most_recent.obj_space) && step_size > explore_step_min) {
         print("Reduced early!");
-        step_size = max(step_size / max_step_factor, eps_explore_set);
+        step_size = max(step_size / explore_scale_factor, explore_step_min);
         continue;
       }
 
@@ -114,7 +113,7 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       ref_point = predicted.obj_space;
       
       double max_descent;
-      if (step_size == eps_explore_set && force_gradient_direction) {
+      if (step_size == explore_step_min && force_gradient_direction) {
         max_descent = inf;
       } else {
         max_descent = step_size;
@@ -140,17 +139,17 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       }
 
       if (correction_distance > step_size ||
-          angle_to_corrected < (180 - max_angle_deviation)) {
+          angle_to_corrected < (180 - explore_angle_max)) {
 
         if (correction_distance > step_size) {
           print("The correction distance was too large " + to_string(correction_distance) +
             "/" + to_string(step_size));
-        } else if (angle_to_corrected < (180 - max_angle_deviation)) {
+        } else if (angle_to_corrected < (180 - explore_angle_max)) {
           print("The angle to corrected was too small " + to_string(angle_to_corrected));
         }
         
-        if (step_size > eps_explore_set) {
-          step_size = max(step_size / 2, eps_explore_set);
+        if (step_size > explore_step_min) {
+          step_size = max(step_size / 2, explore_step_min);
           continue;
         } else {
           if (!force_gradient_direction) {
@@ -162,8 +161,8 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       
       /* (4) If successful until here, determine if we ridged or are in the same set */
       
-      if (norm(most_recent.dec_space - corrected.dec_space) > max_explore_set && force_gradient_direction) {
-        // Only executed if step_size == eps_explore_set && force_gradient_direction
+      if (norm(most_recent.dec_space - corrected.dec_space) > explore_step_max && force_gradient_direction) {
+        // Only executed if step_size == explore_step_min && force_gradient_direction
         ridged_points.push_back(corrected);
         terminate = true;
       } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
@@ -188,18 +187,18 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
           
           if (angle_deviation == 0) {
             // Set to max
-            step_size_factor = max_step_factor;
+            step_size_factor = explore_scale_factor;
           } else {
-            step_size_factor = (max_angle_deviation / 2) / angle_deviation;
+            step_size_factor = (explore_angle_max / 2) / angle_deviation;
 
             // Keep step size factor reasonable
-            step_size_factor = min(step_size_factor, max_step_factor);
-            step_size_factor = max(step_size_factor, 1 / max_step_factor);
+            step_size_factor = min(step_size_factor, explore_scale_factor);
+            step_size_factor = max(step_size_factor, 1 / explore_scale_factor);
           }
           
           step_size = step_size * step_size_factor;
-          step_size = min(step_size, max_explore_set);
-          step_size = max(step_size, eps_explore_set);
+          step_size = min(step_size, explore_step_max);
+          step_size = max(step_size, explore_step_min);
         }
       }
     }
@@ -217,10 +216,14 @@ explore_set_fn get_explore_set_fn(
     const corrector_fn& descent_fn,
     const double_vector& lower,
     const double_vector& upper,
-    double eps_explore_set,
-    double max_explore_set) {
+    double explore_step_min,
+    double explore_step_max,
+    double explore_angle_max,
+    double explore_scale_factor) {
   
-  explore_set_fn f = [&fn, &grad_fn, &descent_fn, lower, upper, eps_explore_set, max_explore_set]
+  explore_set_fn f = [&fn, &grad_fn, &descent_fn, lower, upper,
+                      explore_step_min, explore_step_max,
+                      explore_angle_max, explore_scale_factor]
   (const evaluated_point& starting_point) mutable {
     return explore_efficient_set(
       starting_point,
@@ -229,8 +232,10 @@ explore_set_fn get_explore_set_fn(
       descent_fn,
       lower,
       upper,
-      eps_explore_set,
-      max_explore_set);
+      explore_step_min,
+      explore_step_max,
+      explore_angle_max,
+      explore_scale_factor);
   };
   
   return f;

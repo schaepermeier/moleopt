@@ -142,7 +142,9 @@ List run_mogsa_cpp(
     lower,
     upper,
     epsilon_explore_set,
-    max_explore_set);
+    max_explore_set,
+    45,
+    2);
   
   // Run Mogsa
   
