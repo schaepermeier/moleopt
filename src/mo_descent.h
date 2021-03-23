@@ -18,8 +18,13 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
 
 corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
                                                const gradient_fn& grad_fn,
-                                               double eps_initial_step_size,
-                                               double eps_descent_direction,
+                                               double descent_direction_min,
+                                               double descent_step_min,
+                                               double descent_step_max,
+                                               double descent_scale_factor,
+                                               double descent_armijo_factor,
+                                               int descent_history_size,
+                                               int descent_max_iter,
                                                const double_vector& lower,
                                                const double_vector& upper);
 

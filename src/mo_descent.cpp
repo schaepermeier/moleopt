@@ -142,23 +142,23 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
 
 corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
                                                const gradient_fn& grad_fn,
-                                               double eps_initial_step_size,
-                                               double eps_descent_direction,
+                                               double descent_direction_min,
+                                               double descent_step_min,
+                                               double descent_step_max,
+                                               double descent_scale_factor,
+                                               double descent_armijo_factor,
+                                               int descent_history_size,
+                                               int descent_max_iter,
                                                const double_vector& lower,
                                                const double_vector& upper) {
 
-  corrector_fn corr_fn = [&fn, &grad_fn, eps_initial_step_size, eps_descent_direction, lower, upper]
+  corrector_fn corr_fn = [&fn, &grad_fn, descent_direction_min,
+                          descent_step_min, descent_step_max,
+                          descent_scale_factor, descent_armijo_factor,
+                          descent_history_size, descent_max_iter,
+                          lower, upper]
   (const evaluated_point& starting_point, double_vector ref_point, double max_descent) mutable {
-
-    // TODO change to parameter
-    double max_stepsize = 0.1;
-    double scale_factor = 2;
-    double armijo_scale = 1e-4;
-
-    // Non-monotone search setup
-
-    int history_size = 100;
-
+                            
     std::deque<double_vector> obj_history;
     obj_history.push_back(ref_point);
 
@@ -178,7 +178,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       return starting_point;
     }
 
-    double alpha = eps_initial_step_size / norm(descent_direction);
+    double alpha = descent_step_min / norm(descent_direction);
 
     // First: Some line search to find initial alpha
 
@@ -192,17 +192,17 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       
       trial_point.obj_space = fn(trial_point.dec_space);
 
-      alpha *= scale_factor;
+      alpha *= descent_scale_factor;
     } while (dominates(trial_point.obj_space, current_iterate.obj_space) &&
-      norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
-      alpha * norm(descent_direction) < max_stepsize);
+             norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
+             alpha * norm(descent_direction) < descent_step_max);
 
     if (norm(current_iterate.dec_space - starting_point.dec_space) >= max_descent) {
       return current_iterate;
     }
 
     // We increased alpha once too often
-    alpha /= scale_factor;
+    alpha /= descent_scale_factor;
     // Set to starting_point and treat previous step as first iteration
     previous_iterate = starting_point;
     previous_descent_direction = descent_direction;
@@ -216,11 +216,10 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
       
       int iters = 0;
-      int max_iters = 1000;
 
-      while (norm(descent_direction) > eps_descent_direction && alpha > 0 &&
+      while (norm(descent_direction) > descent_direction_min && alpha > 0 &&
              norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
-             iters < max_iters) {
+             iters < descent_max_iter) {
         iters++;
 
         double_vector sk = current_iterate.dec_space - previous_iterate.dec_space;
@@ -241,8 +240,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           break;
         }
 
-        alpha = min(alpha, max_stepsize / norm(descent_direction));
-        alpha = max(alpha, eps_initial_step_size / norm(descent_direction));
+        alpha = min(alpha, descent_step_max / norm(descent_direction));
+        alpha = max(alpha, descent_step_min / norm(descent_direction));
 
         double_vector expected_improvements = {
           dot(normalize(descent_direction), -gradients[0]),
@@ -252,24 +251,26 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // print(expected_improvements);
 
         // Decreased once too often below
-        alpha *= scale_factor;
+        alpha *= descent_scale_factor;
 
         do {
-          alpha /= scale_factor;
+          alpha /= descent_scale_factor;
 
           trial_point.dec_space = current_iterate.dec_space + alpha * descent_direction;
           ensure_boundary(trial_point.dec_space, lower, upper);
           
           trial_point.obj_space = fn(trial_point.dec_space);
-          // TODO Sufficient, if dominates + Armijo in _one_ objective?!
-        } while (// (!dominates(trial_point.obj_space, ref_point) || dominates(ref_point, trial_point.obj_space + armijo_scale * alpha * expected_improvements + 1e-4)) &&
-                  !dominates(trial_point.obj_space - armijo_scale * alpha * expected_improvements, ref_point) &&
-                  alpha * norm(descent_direction) >= eps_initial_step_size
+        } while (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) &&
+                  alpha * norm(descent_direction) >= descent_step_min
         );
+        
+        // while (alpha >= descent_step_min &&
+        //        !dominates(trial_point.obj_space - descent_armijo_factor * alpha * expected_improvements, ref_point)) {
+        //   
+        // }
 
-        if (// (!dominates(trial_point.obj_space, ref_point) || dominates(ref_point, trial_point.obj_space + armijo_scale * alpha * expected_improvements + 1e-4)) ||
-             !dominates(trial_point.obj_space + armijo_scale * alpha * expected_improvements, ref_point) ||
-            (alpha * norm(descent_direction) <= eps_initial_step_size && !dominates(trial_point.obj_space, current_iterate.obj_space))) {
+        if (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) ||
+            (alpha * norm(descent_direction) <= descent_step_min && !dominates(trial_point.obj_space, current_iterate.obj_space))) {
           break;
         }
 
@@ -288,7 +289,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // Update ref_point
 
         obj_history.push_back(current_iterate.obj_space);
-        if (obj_history.size() > history_size) {
+        if (obj_history.size() > descent_history_size) {
           obj_history.pop_front();
         }
 
@@ -298,7 +299,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         //   ref_point = ref_point + v;
         // }
         // 
-        // ref_point = ref_point / history_size;
+        // ref_point = ref_point / descent_max_iter;
 
         ref_point = {-inf, -inf};
 

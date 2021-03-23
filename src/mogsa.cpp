@@ -121,10 +121,16 @@ List run_mogsa_cpp(
   } else {
     descent_function = create_two_point_stepsize_descent(mo_function,
                                                          gradient_function,
-                                                         epsilon_initial_step_size,
                                                          1e-8,
+                                                         epsilon_initial_step_size,
+                                                         0.1,
+                                                         2,
+                                                         1e-4,
+                                                         100,
+                                                         1000,
                                                          lower,
                                                          upper);
+    
   }
   
   // Create the explore_set function
