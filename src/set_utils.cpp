@@ -221,34 +221,28 @@ void refine_sets(vector<efficient_set>& sets,
 
   std::set<std::tuple<double, int, evaluated_point, evaluated_point>, decltype(sort_by_first)> potential_pairs(sort_by_first);
 
+  double_vector local_ideal;
+  
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
     
     evaluated_point prev; // "Previous" point along set
     evaluated_point current; // "Current" point along set
-    
-    bool prev_nondom; // Does the previous point along the set belong to the non-dominated ones?
-    bool current_nondom; // Does the current point along the set belong to the non-dominated ones?
-    
+
     current = it->second;
 
-    auto nondom_it = (nondominated_points.find(current.obj_space));
-    current_nondom = (nondom_it != nondominated_points.end());
-    
     it++;
 
     for (; it != sets[set_id].end(); it++) {
       prev = current;
-      prev_nondom = current_nondom;
-      
       current = it->second;
       
-      // TODO Change to check if their ideal point is nondom
-
-      nondom_it = (nondominated_points.find(current.obj_space));
-      current_nondom = (nondom_it != nondominated_points.end());
-
-      if (prev_nondom || current_nondom) {
+      local_ideal = {
+        min(prev.obj_space[0], current.obj_space[0]),
+        min(prev.obj_space[1], current.obj_space[1])
+      };
+      
+      if (is_nondominated(nondominated_points, local_ideal)) {
         double_vector improvement = current.obj_space - prev.obj_space;
         
         double hv_potential = (current.obj_space[0] - prev.obj_space[0]) *
@@ -294,21 +288,36 @@ void refine_sets(vector<efficient_set>& sets,
       
       // Add {left, new_point}
       
-      hv_potential = (new_point.obj_space[0] - left.obj_space[0]) *
-        (left.obj_space[1] - new_point.obj_space[1]);
+      local_ideal = {
+        min(new_point.obj_space[0], left.obj_space[0]),
+        min(new_point.obj_space[1], left.obj_space[1])
+      };
       
-      total_hv_potential += hv_potential;
-      
-      potential_pairs.insert({hv_potential, set_id, left, new_point});
+      if (is_nondominated(nondominated_points, local_ideal)) {
+        hv_potential = (new_point.obj_space[0] - left.obj_space[0]) *
+          (left.obj_space[1] - new_point.obj_space[1]);
+        
+        total_hv_potential += hv_potential;
+        
+        potential_pairs.insert({hv_potential, set_id, left, new_point});
+      }
       
       // Add {new_point, right}
       
-      hv_potential = (right.obj_space[0] - new_point.obj_space[0]) *
-        (new_point.obj_space[1] - right.obj_space[1]);
+      local_ideal = {
+        min(new_point.obj_space[0], right.obj_space[0]),
+        min(new_point.obj_space[1], right.obj_space[1])
+      };
       
-      total_hv_potential += hv_potential;
-      
-      potential_pairs.insert({hv_potential, set_id, new_point, right});
+      if (is_nondominated(nondominated_points, local_ideal)) {
+        
+        hv_potential = (right.obj_space[0] - new_point.obj_space[0]) *
+          (new_point.obj_space[1] - right.obj_space[1]);
+        
+        total_hv_potential += hv_potential;
+        
+        potential_pairs.insert({hv_potential, set_id, new_point, right});
+      }
       
       // print(total_hv_potential / max_hv);
     } else {
