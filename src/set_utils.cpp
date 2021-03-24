@@ -222,12 +222,14 @@ void refine_sets(vector<efficient_set>& sets,
   std::set<std::tuple<double, int, evaluated_point, evaluated_point>, decltype(sort_by_first)> potential_pairs(sort_by_first);
 
   double_vector local_ideal;
+  double_vector improvement;
+  double hv_potential;
+  
+  evaluated_point prev; // "Previous" point along set
+  evaluated_point current; // "Current" point along set
   
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
-    
-    evaluated_point prev; // "Previous" point along set
-    evaluated_point current; // "Current" point along set
 
     current = it->second;
 
@@ -243,17 +245,14 @@ void refine_sets(vector<efficient_set>& sets,
       };
       
       if (is_nondominated(nondominated_points, local_ideal)) {
-        double_vector improvement = current.obj_space - prev.obj_space;
+        improvement = current.obj_space - prev.obj_space;
         
-        double hv_potential = (current.obj_space[0] - prev.obj_space[0]) *
-                              (prev.obj_space[1] - current.obj_space[1]);
+        hv_potential = (current.obj_space[0] - prev.obj_space[0]) *
+                       (prev.obj_space[1] - current.obj_space[1]);
         
         total_hv_potential += hv_potential;
-        
-        evaluated_point left(prev);
-        evaluated_point right(current);
-        
-        potential_pairs.insert({hv_potential, set_id, left, right});
+
+        potential_pairs.insert({hv_potential, set_id, prev, current});
       }
     }
   }
@@ -272,12 +271,14 @@ void refine_sets(vector<efficient_set>& sets,
     new_point.obj_space = fn(new_point.dec_space);
 
     angle = min(angle_at_point(sets[set_id], left),
-                       angle_at_point(sets[set_id], right));
+                angle_at_point(sets[set_id], right));
     
     expected_max_descent = 0.5 * norm(left.dec_space - right.dec_space) / tan(angle / 180 * M_PI / 2);
 
     if (!isnan(expected_max_descent) && expected_max_descent > 1e-6) {
       new_point = descent_fn(new_point, new_point.obj_space, inf);
+    } else {
+      print("Skipping descent");
     }
 
     if (inbounds(new_point.obj_space, {left.obj_space[0], right.obj_space[1]},
