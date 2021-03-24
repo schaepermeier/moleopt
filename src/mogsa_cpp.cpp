@@ -14,7 +14,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower_bounds,
     const double_vector& upper_bounds,
-    double epsilon_explore_set) {
+    double epsilon_explore_set,
+    int refine_after_nstarts,
+    double refine_hv_target) {
   
   /* ========= Setup ========= */
   
@@ -123,13 +125,16 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       }
     }
     
-    if (starting_points_done == 10 || (starting_points_done > 10 && nondom_set_in_iter)) {
-      refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
+    if (refine_hv_target > 0) {
+      if (starting_points_done == refine_after_nstarts ||
+         (starting_points_done > refine_after_nstarts && nondom_set_in_iter)) {
+        refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
+      }
     }
   }
   
-  if (!budget_depleted) {
-    refine_sets(local_sets, 2e-5, mo_function, descent_function, nondominated_points);
+  if (!budget_depleted && (refine_hv_target > 0)) {
+    refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
   }
   
   print(nondominated_points.size());
@@ -145,7 +150,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     double epsilon_gradient,
     double epsilon_explore_set,
     double epsilon_initial_step_size,
-    double max_explore_set) {
+    double max_explore_set,
+    int refine_after_nstarts,
+    double refine_hv_target) {
   
   /* ========= Setup and run Mogsa ========= */
   
@@ -196,7 +203,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     starting_points,
     lower,
     upper,
-    epsilon_explore_set);
+    epsilon_explore_set,
+    refine_after_nstarts,
+    refine_hv_target);
   
 }
 

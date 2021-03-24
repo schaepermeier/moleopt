@@ -97,6 +97,8 @@ List run_mogsa_cpp(
     double explore_step_max = 1e-1,
     double explore_angle_max = 45,
     double explore_scale_factor = 2,
+    int refine_after_nstarts = 10,
+    double refine_hv_target = 2e-5,
     Nullable<Function> custom_descent_fn = R_NilValue,
     long max_budget = inf,
     std::string logging = "info") {
@@ -170,7 +172,9 @@ List run_mogsa_cpp(
             rows_to_vectors(starting_points),
             lower,
             upper,
-            explore_step_min);
+            explore_step_min,
+            refine_after_nstarts,
+            refine_hv_target);
   
   /* ========= Postprocess the result ========= */
   
