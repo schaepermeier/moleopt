@@ -85,10 +85,18 @@ List run_mogsa_cpp(
     NumericMatrix starting_points,
     NumericVector lower_bounds,
     NumericVector upper_bounds,
-    double epsilon_gradient,
-    double epsilon_explore_set,
-    double epsilon_initial_step_size,
-    double max_explore_set,
+    double epsilon_gradient = 1e-8,
+    double descent_direction_min = 1e-8,
+    double descent_step_min = 1e-6,
+    double descent_step_max = 1e-1,
+    double descent_scale_factor = 2,
+    double descent_armijo_factor = 1e-4,
+    int descent_history_size = 100,
+    int descent_max_iter = 1000,
+    double explore_step_min = 1e-4,
+    double explore_step_max = 1e-1,
+    double explore_angle_max = 45,
+    double explore_scale_factor = 2,
     Nullable<Function> custom_descent_fn = R_NilValue,
     long max_budget = inf,
     std::string logging = "info") {
@@ -127,15 +135,15 @@ List run_mogsa_cpp(
   } else {
     descent_function = create_two_point_stepsize_descent(mo_function,
                                                          gradient_function,
-                                                         1e-8,
-                                                         epsilon_initial_step_size,
-                                                         0.1,
-                                                         2,
-                                                         1e-4,
-                                                         100,
-                                                         1000,
                                                          lower,
-                                                         upper);
+                                                         upper,
+                                                         descent_direction_min,
+                                                         descent_step_min,
+                                                         descent_step_max,
+                                                         descent_scale_factor,
+                                                         descent_armijo_factor,
+                                                         descent_history_size,
+                                                         descent_max_iter);
     
   }
   
@@ -147,10 +155,10 @@ List run_mogsa_cpp(
     descent_function,
     lower,
     upper,
-    epsilon_explore_set,
-    max_explore_set,
-    45,
-    2);
+    explore_step_min,
+    explore_step_max,
+    explore_angle_max,
+    explore_scale_factor);
   
   // Run Mogsa
   
@@ -162,9 +170,7 @@ List run_mogsa_cpp(
             rows_to_vectors(starting_points),
             lower,
             upper,
-            epsilon_explore_set,
-            epsilon_initial_step_size,
-            max_explore_set);
+            explore_step_min);
   
   /* ========= Postprocess the result ========= */
   

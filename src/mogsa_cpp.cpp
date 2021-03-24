@@ -14,9 +14,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower_bounds,
     const double_vector& upper_bounds,
-    double epsilon_explore_set,
-    double epsilon_initial_step_size,
-    double maximum_explore_set) {
+    double epsilon_explore_set) {
   
   /* ========= Setup ========= */
   
@@ -165,15 +163,15 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   
   descent_function = create_two_point_stepsize_descent(mo_function,
                                                        gradient_function,
+                                                       lower,
+                                                       upper,
                                                        1e-8,
                                                        epsilon_initial_step_size,
                                                        0.1,
                                                        2,
                                                        1e-4,
                                                        100,
-                                                       1000,
-                                                       lower,
-                                                       upper);
+                                                       1000);
 
   // Create the explore_set function
   
@@ -198,9 +196,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     starting_points,
     lower,
     upper,
-    epsilon_explore_set,
-    epsilon_initial_step_size,
-    max_explore_set);
+    epsilon_explore_set);
   
 }
 

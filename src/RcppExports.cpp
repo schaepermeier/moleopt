@@ -17,8 +17,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_mogsa_cpp
-List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower_bounds, NumericVector upper_bounds, double epsilon_gradient, double epsilon_explore_set, double epsilon_initial_step_size, double max_explore_set, Nullable<Function> custom_descent_fn, long max_budget, std::string logging);
-RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP epsilon_gradientSEXP, SEXP epsilon_explore_setSEXP, SEXP epsilon_initial_step_sizeSEXP, SEXP max_explore_setSEXP, SEXP custom_descent_fnSEXP, SEXP max_budgetSEXP, SEXP loggingSEXP) {
+List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower_bounds, NumericVector upper_bounds, double epsilon_gradient, double descent_direction_min, double descent_step_min, double descent_step_max, double descent_scale_factor, double descent_armijo_factor, int descent_history_size, int descent_max_iter, double explore_step_min, double explore_step_max, double explore_angle_max, double explore_scale_factor, Nullable<Function> custom_descent_fn, long max_budget, std::string logging);
+RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP epsilon_gradientSEXP, SEXP descent_direction_minSEXP, SEXP descent_step_minSEXP, SEXP descent_step_maxSEXP, SEXP descent_scale_factorSEXP, SEXP descent_armijo_factorSEXP, SEXP descent_history_sizeSEXP, SEXP descent_max_iterSEXP, SEXP explore_step_minSEXP, SEXP explore_step_maxSEXP, SEXP explore_angle_maxSEXP, SEXP explore_scale_factorSEXP, SEXP custom_descent_fnSEXP, SEXP max_budgetSEXP, SEXP loggingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,20 +27,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type lower_bounds(lower_boundsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type upper_bounds(upper_boundsSEXP);
     Rcpp::traits::input_parameter< double >::type epsilon_gradient(epsilon_gradientSEXP);
-    Rcpp::traits::input_parameter< double >::type epsilon_explore_set(epsilon_explore_setSEXP);
-    Rcpp::traits::input_parameter< double >::type epsilon_initial_step_size(epsilon_initial_step_sizeSEXP);
-    Rcpp::traits::input_parameter< double >::type max_explore_set(max_explore_setSEXP);
+    Rcpp::traits::input_parameter< double >::type descent_direction_min(descent_direction_minSEXP);
+    Rcpp::traits::input_parameter< double >::type descent_step_min(descent_step_minSEXP);
+    Rcpp::traits::input_parameter< double >::type descent_step_max(descent_step_maxSEXP);
+    Rcpp::traits::input_parameter< double >::type descent_scale_factor(descent_scale_factorSEXP);
+    Rcpp::traits::input_parameter< double >::type descent_armijo_factor(descent_armijo_factorSEXP);
+    Rcpp::traits::input_parameter< int >::type descent_history_size(descent_history_sizeSEXP);
+    Rcpp::traits::input_parameter< int >::type descent_max_iter(descent_max_iterSEXP);
+    Rcpp::traits::input_parameter< double >::type explore_step_min(explore_step_minSEXP);
+    Rcpp::traits::input_parameter< double >::type explore_step_max(explore_step_maxSEXP);
+    Rcpp::traits::input_parameter< double >::type explore_angle_max(explore_angle_maxSEXP);
+    Rcpp::traits::input_parameter< double >::type explore_scale_factor(explore_scale_factorSEXP);
     Rcpp::traits::input_parameter< Nullable<Function> >::type custom_descent_fn(custom_descent_fnSEXP);
     Rcpp::traits::input_parameter< long >::type max_budget(max_budgetSEXP);
     Rcpp::traits::input_parameter< std::string >::type logging(loggingSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient, epsilon_explore_set, epsilon_initial_step_size, max_explore_set, custom_descent_fn, max_budget, logging));
+    rcpp_result_gen = Rcpp::wrap(run_mogsa_cpp(fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient, descent_direction_min, descent_step_min, descent_step_max, descent_scale_factor, descent_armijo_factor, descent_history_size, descent_max_iter, explore_step_min, explore_step_max, explore_angle_max, explore_scale_factor, custom_descent_fn, max_budget, logging));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mogsacpp_nondominated", (DL_FUNC) &_mogsacpp_nondominated, 1},
-    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 11},
+    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 19},
     {NULL, NULL, 0}
 };
 
