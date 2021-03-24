@@ -17,8 +17,8 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 # ========= MOGSA =========
 
 d <- 2
-fid <- 2
-iid <- 1
+fid <- 10
+iid <- 10
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
@@ -33,7 +33,7 @@ fn <- biobj_bbob_data$fn
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 100
+nstarts <- 20
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
 
@@ -66,16 +66,26 @@ while (run_counter < nruns) {
   }
 
   mogsa_trace <- run_mogsa(f, starting_points,
-                              eps_gradient = 1e-8,
-                              eps_initial_step_size = 1e-6,
-                              eps_explore_set = 1e-4,
-                              # max_explore_set = 1e-3,
-                              max_explore_set = sqrt(sum((upper - lower) ** 2)) / 100,
+                              epsilon_gradient = 1e-8,
+                              descent_direction_min = 1e-8,
+                              descent_step_min = 1e-6,
+                              descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
+                              descent_scale_factor = 2,
+                              descent_armijo_factor = 1e-4,
+                              descent_history_size = 100,
+                              descent_max_iter = 1000,
+                              explore_step_min = 1e-4,
+                              # explore_step_max = 1e-3,
+                              explore_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
+                              explore_angle_max = 45,
+                              explore_scale_factor = 2,
+                              refine_after_nstarts = 10,
+                              refine_hv_target = -1,
                               # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
                               # lower = rep(-100, length(lower)),
                               # upper = rep(100, length(upper)),
-                              max_budget = 10000,
-                              logging = FALSE
+                              max_budget = Inf,
+                              logging = "info"
                            )
 
   if (log_y) {
@@ -166,7 +176,7 @@ hv <- ecr::computeHV(t(as.matrix(obj.opt.path[nondom,1:2])), ref.point = ref_poi
 hv / hv.norm
 
 # log10(5/6 - hv / hv.norm)
-log10(0.922987888165046 - hv / hv.norm)
+# log10(0.940003750569188 - hv / hv.norm)
 
 ggplot() +
   geom_point(aes(x = y1, y = y2), data = obj.opt.path[!nondom,], color = "red") +
@@ -194,12 +204,12 @@ weights <- (mogsa_trace$transitions[mogsa_trace$transitions[,1]==-1, 2] + 1) %>%
 prop <- compute_reach_proportions(tbl_transitions, weights)
 
 set_nd_counts <- compute_nondominated_sets(mogsa_trace$sets)
-node_color <- ifelse(set_nd_counts > 0, "green", "red")
+node_color <- ifelse(set_nd_counts > 0, "green", "darkmagenta")
 
 (1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
 
 ggraph(tbl_transitions, layout = "stress") +
-  geom_node_point(aes(size = 1), color = "gray") +
+  geom_node_point(aes(size = 1), color = "black", shape = 21, stroke = TRUE) +
   geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
@@ -217,13 +227,13 @@ sum(igraph::degree(condensation, mode = "out") == 0)
 node_pos <- set_medians(mogsa_trace$sets)
 
 ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
-  geom_node_point(aes(size = 1), color = "gray") +
+  geom_node_point(aes(size = 1), color = "black", shape = 21, stroke = TRUE) +
   geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
   scale_size_area(limits = c(0,1)) +
   coord_fixed() +
-  theme(legend.position = "none",
+  theme(#legend.position = "none",
         panel.background = element_rect(fill = "transparent"))
 
 
