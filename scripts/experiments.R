@@ -17,14 +17,14 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 # ========= MOGSA =========
 
 d <- 2
-fid <- 10
-iid <- 10
+fid <- 2
+iid <- 3
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
 # fn <- smoof::makeWFG1Function(2)
 # fn <- smoof::makeDTLZ1Function(dimensions = 2, n.objectives = 2)
-# fn <- makeAsparFunction(2, 2)
+# fn <- makeAsparFunction(dimensions = 3, n.objectives = 2)
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
 #                                         par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5, -5), upper = c(5, 5)))
 # fn <- smoof::makeMMF4Function()
@@ -33,7 +33,7 @@ fn <- biobj_bbob_data$fn
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 20
+nstarts <- 100
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
 
@@ -67,7 +67,7 @@ while (run_counter < nruns) {
 
   mogsa_trace <- run_mogsa(f, starting_points,
                               epsilon_gradient = 1e-8,
-                              descent_direction_min = 1e-8,
+                              descent_direction_min = 1e-4,
                               descent_step_min = 1e-6,
                               descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
                               descent_scale_factor = 2,
@@ -204,17 +204,19 @@ weights <- (mogsa_trace$transitions[mogsa_trace$transitions[,1]==-1, 2] + 1) %>%
 prop <- compute_reach_proportions(tbl_transitions, weights)
 
 set_nd_counts <- compute_nondominated_sets(mogsa_trace$sets)
-node_color <- ifelse(set_nd_counts > 0, "green", "darkmagenta")
+node_color <- ifelse(set_nd_counts > 0, "darkgreen", "magenta")
 
 (1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
 
 ggraph(tbl_transitions, layout = "stress") +
-  geom_node_point(aes(size = 1), color = "black", shape = 21, stroke = TRUE) +
+  geom_node_point(aes(size = 1), color = "black", shape = 21) +
   geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
   scale_size_area(limits = c(0,1)) +
-  theme(panel.background = element_rect(fill = "transparent"))
+  theme(#legend.position = "none",
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"))
 
 ## Find Local Search Traps
 
@@ -227,14 +229,15 @@ sum(igraph::degree(condensation, mode = "out") == 0)
 node_pos <- set_medians(mogsa_trace$sets)
 
 ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
-  geom_node_point(aes(size = 1), color = "black", shape = 21, stroke = TRUE) +
+  geom_node_point(aes(size = 1), color = "black", shape = 21) +
   geom_node_point(aes(size = prop), color = node_color) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
   scale_size_area(limits = c(0,1)) +
   coord_fixed() +
   theme(#legend.position = "none",
-        panel.background = element_rect(fill = "transparent"))
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"))
 
 
 

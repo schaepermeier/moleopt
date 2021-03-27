@@ -5,7 +5,7 @@ library(tidyverse)
 design <- moPLOT::generateDesign(fn, points.per.dimension = 500L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
-gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
+gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = TRUE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
 
 less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "fast")
@@ -152,15 +152,17 @@ mog_ch_length <- lapply(1:nrow(gradients$single.objective[[1]]), function(i) {
   
 }) %>% unlist
 
+obj_space_transformed <- t(apply(design$obj.space, 1, function(c) c * c(100, 1)))
+
+vnorm <- function(x) sqrt(sum(x ** 2))
+
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = mog_ch_length), log.scale = F) +
   coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = mog_ch_length), log.scale = F)
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = mog_ch_length), log.scale = F)
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F) +
   coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F)
-
-vnorm <- function(x) sqrt(sum(x ** 2))
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F)
 
 rescaled <- sapply(1:nrow(gradients$multi.objective), function(i) {
   gradients$multi.objective[i,] *
@@ -173,9 +175,38 @@ rescaled_length <- apply(rescaled, 1, vnorm)
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = original_length), log.scale = F) +
   coord_fixed()
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = original_length), log.scale = F)
+
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = rescaled_length), log.scale = F) +
   coord_fixed()
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = rescaled_length), log.scale = F)
 
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = original_length), log.scale = F)
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = rescaled_length), log.scale = F)
+### Original MOGSA ###
 
+library(mogsa)
+library(tidyverse)
+
+mogsa.result = mogsa::runMOGSA(c(1,1), fn, scale.step = 0.5, exploration.step = 0.1,
+                        lower = smoof::getLowerBoxConstraints(fn), upper = smoof::getUpperBoxConstraints(fn))
+
+g +
+  geom_point(data = mogsa.result, mapping = aes(x1, x2, shape = type))
+
+ggsave("~/Desktop/thesis-pics/mogsa-aspar.png", width = unit(3, "in"), height = unit(3, "in"))
+
+yvals <- apply(mogsa.result[,1:2], 1, fn) %>% t
+colnames(yvals) <- c("y1", "y2")
+
+g.obj +
+  geom_point(data = as.data.frame(yvals), mapping = aes(y1, y2))
+
+### HEATMAPS
+
+moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, less$height)) +
+  theme(legend.position = "none") +
+  coord_fixed()
+ggsave("~/Desktop/thesis-pics/bbobbiobj-gfh-dec.png", width = unit(3, "in"), height = unit(3, "in"))
+
+moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, less$height)) +
+  theme(legend.position = "none")
+ggsave("~/Desktop/thesis-pics/bbobbiobj-gfh-obj.png", width = unit(3, "in"), height = unit(3, "in"))
