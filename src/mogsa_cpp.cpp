@@ -14,7 +14,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower_bounds,
     const double_vector& upper_bounds,
-    double epsilon_explore_set,
+    double explore_step_min,
     int refine_after_nstarts,
     double refine_hv_target) {
   
@@ -78,7 +78,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       
       // Validate that chosen point does not belong to an already explored set
       
-      int containing_set = already_visited_fn(local_sets, point_to_explore, epsilon_explore_set);
+      int containing_set = already_visited_fn(local_sets, point_to_explore, explore_step_min);
       
       if (containing_set != -1) {
         // This set was already explored before.
@@ -147,12 +147,20 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower,
     const double_vector& upper,
-    double epsilon_gradient,
-    double epsilon_explore_set,
-    double epsilon_initial_step_size,
-    double max_explore_set,
-    int refine_after_nstarts,
-    double refine_hv_target) {
+    double epsilon_gradient = 1e-8,
+    double descent_direction_min = 1e-8,
+    double descent_step_min = 1e-6,
+    double descent_step_max = 1e-1,
+    double descent_scale_factor = 2,
+    double descent_armijo_factor = 1e-4,
+    int descent_history_size = 100,
+    int descent_max_iter = 1000,
+    double explore_step_min = 1e-4,
+    double explore_step_max = 1e-1,
+    double explore_angle_max = 45,
+    double explore_scale_factor = 2,
+    int refine_after_nstarts = 10,
+    double refine_hv_target = 2e-5) {
   
   /* ========= Setup and run Mogsa ========= */
   
@@ -172,13 +180,13 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
                                                        gradient_function,
                                                        lower,
                                                        upper,
-                                                       1e-8,
-                                                       epsilon_initial_step_size,
-                                                       0.1,
-                                                       2,
-                                                       1e-4,
-                                                       100,
-                                                       1000);
+                                                       descent_direction_min,
+                                                       descent_step_min,
+                                                       descent_step_max,
+                                                       descent_scale_factor,
+                                                       descent_armijo_factor,
+                                                       descent_history_size,
+                                                       descent_max_iter);
 
   // Create the explore_set function
   
@@ -188,10 +196,10 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     descent_function,
     lower,
     upper,
-    epsilon_explore_set,
-    max_explore_set,
-    45,
-    2);
+    explore_step_min,
+    explore_step_max,
+    explore_angle_max,
+    explore_scale_factor);
   
   // Run Mogsa
   
@@ -203,7 +211,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     starting_points,
     lower,
     upper,
-    epsilon_explore_set,
+    explore_step_min,
     refine_after_nstarts,
     refine_hv_target);
   
