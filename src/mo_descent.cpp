@@ -219,7 +219,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       
       int iters = 0;
 
-      while (norm_descent_direction > descent_direction_min && alpha > 0 &&
+      while (norm_descent_direction > descent_direction_min &&
              norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
              iters < descent_max_iter) {
         iters++;
@@ -245,8 +245,8 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         alpha = max(alpha, descent_step_min / norm_descent_direction);
 
         double_vector expected_improvements = {
-          dot(descent_direction / norm_descent_direction, -gradients[0]),
-          dot(descent_direction / norm_descent_direction, -gradients[1])
+          dot(descent_direction, -gradients[0]),
+          dot(descent_direction, -gradients[1])
         };
         
         trial_point.dec_space = current_iterate.dec_space + alpha * descent_direction;
@@ -255,6 +255,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         trial_point.obj_space = fn(trial_point.dec_space);
 
         while (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) &&
+                alpha * norm_descent_direction >= descent_direction_min &&
                 alpha > descent_step_min / norm_descent_direction) {
           alpha = max(alpha / descent_scale_factor, descent_step_min / norm_descent_direction);
           
