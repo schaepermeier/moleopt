@@ -2,10 +2,10 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 500L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 300L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
-gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = TRUE)
+gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
 
 less <- moPLOT::localEfficientSetSkeleton(design, gradients, divergence, integration = "fast")
@@ -22,9 +22,18 @@ contour_height <- apply(contour_height, 2, function(c) {
   c
 })
 
-g +
-  geom_contour(aes(x1, x2, z = contour_height[,1]), data = as.data.frame(design$dec.space), bins = 20, color = "red") +
-  geom_contour(aes(x1, x2, z = contour_height[,2]), data = as.data.frame(design$dec.space), bins = 20, color = "blue")
+nondom <- nondominated(design$obj.space[less$sinks,])
+
+ggplot(data = as.data.frame(design$dec.space), aes(x1, x2)) +
+  geom_contour(aes(z = contour_height[,1]), data = as.data.frame(design$dec.space), bins = 20, color = "red") +
+  geom_contour(aes(z = contour_height[,2]), data = as.data.frame(design$dec.space), bins = 20, color = "blue") +
+  geom_point(data = as.data.frame(design$dec.space[less$sinks[nondom],])) +
+  coord_fixed() +
+  theme_minimal() +
+  labs(x = expression(x[1]),
+       y = expression(x[2]))
+
+ggsave("~/Desktop/thesis-pics/bbobbiobj-contour.pdf", width = unit(3, "in"), height = unit(3, "in"))
 
 opt_f1 <- biobj_bbob_data$opt_f1
 opt_f2 <- biobj_bbob_data$opt_f2
@@ -123,16 +132,17 @@ ggsave("~/Desktop/thesis-pics/aspar-gfh-obj.png", width = unit(3, "in"), height 
 
 g
 
-ggsave("~/Desktop/thesis-pics/aspar-plot-dec.png", width = unit(3, "in"), height = unit(3, "in"))
+ggsave("~/Desktop/thesis-pics/bbobbiobj-plot-dec.png", width = unit(3, "in"), height = unit(3, "in"))
 
 g.obj
 
-ggsave("~/Desktop/thesis-pics/aspar-plot-obj.png", width = unit(3, "in"), height = unit(3, "in"))
+ggsave("~/Desktop/thesis-pics/bbobbiobj-plot-obj.png", width = unit(3, "in"), height = unit(3, "in"))
 
 
+fct <- 1
 
 mog_ch_length <- lapply(1:nrow(gradients$single.objective[[1]]), function(i) {
-  g1 <- 100 * gradients$single.objective[[1]][i,]
+  g1 <- fct * gradients$single.objective[[1]][i,]
   g2 <- gradients$single.objective[[2]][i,]
   
   # const float l2 = length_squared(v, w);  // i.e. |w-v|^2 -  avoid a sqrt
@@ -152,21 +162,25 @@ mog_ch_length <- lapply(1:nrow(gradients$single.objective[[1]]), function(i) {
   
 }) %>% unlist
 
-obj_space_transformed <- t(apply(design$obj.space, 1, function(c) c * c(100, 1)))
+obj_space_transformed <- t(apply(design$obj.space, 1, function(c) c * c(fct, 1)))
 
 vnorm <- function(x) sqrt(sum(x ** 2))
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = mog_ch_length), log.scale = F) +
-  coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = mog_ch_length), log.scale = F)
+  coord_fixed() +
+  labs(fill = latex2exp::TeX("$||\\nabla F_{CH}||$"))
+ggsave("~/Desktop/thesis-pics/balance-bisphere-nonorm.png", width = unit(3, "in"), height = unit(2, "in"))
+# moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = mog_ch_length), log.scale = F)
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F) +
-  coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F)
+  coord_fixed() +
+  labs(fill = latex2exp::TeX("$||\\nabla F_{N}||$"))
+ggsave("~/Desktop/thesis-pics/balance-bisphere-norm.png", width = unit(3, "in"), height = unit(2, "in"))
+# moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = apply(gradients$multi.objective, 1, vnorm)), log.scale = F)
 
 rescaled <- sapply(1:nrow(gradients$multi.objective), function(i) {
   gradients$multi.objective[i,] *
-    sqrt(vnorm(gradients$single.objective[[1]][i,])) *
+    sqrt(vnorm(fct * gradients$single.objective[[1]][i,])) *
     sqrt(vnorm(gradients$single.objective[[2]][i,]))
 }) %>% t
 
@@ -175,11 +189,13 @@ rescaled_length <- apply(rescaled, 1, vnorm)
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = original_length), log.scale = F) +
   coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = original_length), log.scale = F)
+# moPLOT::ggplotObjectiveSpace(cbind.data.frame(design$obj.space, height = original_length), log.scale = F)
 
 moPLOT::ggplotHeatmap(cbind.data.frame(design$dec.space, height = rescaled_length), log.scale = F) +
-  coord_fixed()
-moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = rescaled_length), log.scale = F)
+  coord_fixed() +
+  labs(fill = latex2exp::TeX("$||\\nabla F_{GM}||$"))
+ggsave("~/Desktop/thesis-pics/unbalance-bisphere-gm.png", width = unit(3, "in"), height = unit(2, "in"))
+# moPLOT::ggplotObjectiveSpace(cbind.data.frame(obj_space_transformed, height = rescaled_length), log.scale = F)
 
 ### Original MOGSA ###
 

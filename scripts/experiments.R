@@ -17,14 +17,14 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 # ========= MOGSA =========
 
 d <- 2
-fid <- 2
-iid <- 3
+fid <- 10
+iid <- 10
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
 # fn <- smoof::makeWFG1Function(2)
 # fn <- smoof::makeDTLZ1Function(dimensions = 2, n.objectives = 2)
-# fn <- makeAsparFunction(dimensions = 3, n.objectives = 2)
+# fn <- makeAsparFunction(dimensions = 2, n.objectives = 2)
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
 #                                         par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5, -5), upper = c(5, 5)))
 # fn <- smoof::makeMMF4Function()
@@ -33,9 +33,11 @@ fn <- biobj_bbob_data$fn
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 100
+nstarts <- 20
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
+
+# starting_points <- design$dec.space[less$sinks,]
 
 obj.opt.path <- NULL
 opt.path <- NULL
@@ -67,7 +69,7 @@ while (run_counter < nruns) {
 
   mogsa_trace <- run_mogsa(f, starting_points,
                               epsilon_gradient = 1e-8,
-                              descent_direction_min = 1e-4,
+                              descent_direction_min = 1e-6,
                               descent_step_min = 1e-6,
                               descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
                               descent_scale_factor = 2,
@@ -122,9 +124,11 @@ sum(mogsa_trace$transitions[,1] != -1)
 
 plot_dec_space(mogsa_trace, lower, upper, color = "set_id") +
   coord_fixed() +
+  theme_minimal() +
   theme(legend.position = "none")
 
 plot_obj_space(mogsa_trace) +
+  theme_minimal() +
   theme(legend.position = "none")
 
 plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
@@ -234,12 +238,29 @@ ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
   geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
                 end_cap = circle(4, "mm")) +
   scale_size_area(limits = c(0,1)) +
-  coord_fixed() +
-  theme(#legend.position = "none",
-        panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"))
+  theme_minimal() +
+  coord_fixed(xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2])) +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = NA, size = 0),
+        plot.background = element_rect(fill = NA, size = 0)) +
+  labs(x = expression(x[1]),
+       y = expression(x[2]))
 
+ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
+  geom_node_point(aes(size = 0.5), fill = "black", shape = 21) +
+  geom_edge_fan(arrow = arrow(length = unit(2, "mm")),
+                end_cap = circle(2, "mm")) +
+  scale_size_area(limits = c(0,1)) +
+  coord_fixed(xlim = c(0,1), ylim = c(0,1)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = NA, size = 0, color = NA),
+        plot.background = element_rect(fill = NA, size = 0, color = NA)
+        ) +
+  labs(x = expression(x[1]),
+       y = expression(x[2]))
 
+ggsave("~/Desktop/thesis-pics/LESGraph.pdf", width = unit(3, "in"), height = unit(3, "in"))
 
 ### Plotly 3D Sets ###
 
