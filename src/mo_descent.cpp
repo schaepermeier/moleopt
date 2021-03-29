@@ -218,24 +218,27 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       norm_descent_direction = norm(descent_direction);
       
       int iters = 0;
+      double_vector sk;
+      double_vector yk;
+      double alpha_bb;
+      double alpha_pos;
+      double_vector expected_improvements;
 
       while (norm_descent_direction > descent_direction_min &&
              norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
              iters < descent_max_iter) {
         iters++;
+        
+        /* ========== Determine Step Size ========== */
 
-        double_vector sk = current_iterate.dec_space - previous_iterate.dec_space;
-        double_vector yk = descent_direction - previous_descent_direction;
+        sk = current_iterate.dec_space - previous_iterate.dec_space;
+        yk = descent_direction - previous_descent_direction;
 
         // Barzilai-Borwein
-        double alpha_bb = (dot(sk, sk) / dot(sk, -yk));
-        double alpha_pos = norm(sk) / norm(yk);
+        alpha_bb = (dot(sk, sk) / dot(sk, -yk));
+        alpha_pos = norm(sk) / norm(yk);
 
-        if (alpha_bb <= 0) {
-          alpha = alpha_pos;
-        } else {
-          alpha = alpha_bb;
-        }
+        alpha = max(alpha_bb, alpha_pos);
 
         if (alpha == inf || alpha == 0 || isnan(alpha)) {
           break;
@@ -243,8 +246,11 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
 
         alpha = min(alpha, descent_step_max / norm_descent_direction);
         alpha = max(alpha, descent_step_min / norm_descent_direction);
+        
+        /* ========== Validate Iterate ========== */
 
-        double_vector expected_improvements = {
+        // Determine the expected improvement when going into descent_direction per objective
+        expected_improvements = {
           dot(descent_direction, -gradients[0]),
           dot(descent_direction, -gradients[1])
         };
@@ -254,8 +260,9 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         
         trial_point.obj_space = fn(trial_point.dec_space);
 
+        // If necessary, reduce step size until Armijo condition is fulfilled
+        // until we reached the minimal step size.
         while (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) &&
-                alpha * norm_descent_direction >= descent_direction_min &&
                 alpha > descent_step_min / norm_descent_direction) {
           alpha = max(alpha / descent_scale_factor, descent_step_min / norm_descent_direction);
           
@@ -265,17 +272,24 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           trial_point.obj_space = fn(trial_point.dec_space);
         }
 
-        if (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) ||
-            (alpha * norm_descent_direction <= descent_step_min && !dominates(trial_point.obj_space, current_iterate.obj_space))) {
-          break;
+        // Terminate if we made a step with minimal size AND
+        // either could not fulfill the Armijo condition OR did not find an
+        // immediately dominating point
+        if (alpha <= descent_step_min / norm_descent_direction) {
+          if (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) ||
+              !dominates(trial_point.obj_space, current_iterate.obj_space)) {
+              break;
+          }
         }
 
-        // print(current_iterate.obj_space - trial_point.obj_space);
-
-        // Update State
-
+        /* ========== Update State for Next Iteration ========== */
+        
+        // Update previous iterate
+        
         previous_iterate = current_iterate;
         previous_descent_direction = descent_direction;
+        
+        // Update current iterate and descent direction
 
         current_iterate = trial_point;
         gradients = grad_fn(current_iterate);
@@ -283,20 +297,12 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         project_feasible_direction(descent_direction, current_iterate.dec_space, lower, upper);
         norm_descent_direction = norm(descent_direction);
 
-        // Update ref_point
+        // Update reference point based as max of last descent_history_size iterates
 
         obj_history.push_back(current_iterate.obj_space);
-        if (obj_history.size() > descent_history_size) {
+        while (obj_history.size() > descent_history_size) {
           obj_history.pop_front();
         }
-
-        // ref_point = {0, 0};
-        // 
-        // for (auto& v : obj_history) {
-        //   ref_point = ref_point + v;
-        // }
-        // 
-        // ref_point = ref_point / descent_max_iter;
 
         ref_point = {-inf, -inf};
 
@@ -304,8 +310,6 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
           ref_point = {max(ref_point[0], v[0]), max(ref_point[1], v[1])};
         }
         
-        // ref_point = 0.8 * ref_point + 0.2 * current_iterate.obj_space;
-
         // print(ref_point);
       }
 

@@ -74,34 +74,31 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       if (norm(set_direction) == 0) {
         break;
       }
-      
-      set_direction = normalize(set_direction);
-      
+
       /* (2) Perform prediction along efficient set, check integrity */
 
-      predicted.dec_space = most_recent.dec_space + step_size * set_direction;
+      predicted.dec_space = most_recent.dec_space + step_size * set_direction / norm(set_direction);
       ensure_boundary(predicted.dec_space, lower, upper);
       predicted.obj_space = fn(predicted.dec_space);
 
       // Check already that new predicted point is better in tracked objective
-
       if (predicted.obj_space[objective] >= most_recent.obj_space[objective]) {
-        // print("Predicted was worse than Most Recent");
+        print("Predicted was worse than Most Recent");
         
         if (step_size > explore_step_min) {
           step_size = max(step_size / explore_scale_factor, explore_step_min);
-          continue;
         } else {
           if (force_gradient_direction) {
             terminate = true;
           } else {
             force_gradient_direction = true;
           }
-          continue;
         }
+        
+        continue;
       }
       
-      // TODO terminate early, if dominates(predicted, most_recent)?
+      // Reduce step size without descent, if we already dominate
       if (dominates(predicted.obj_space, most_recent.obj_space) && step_size > explore_step_min) {
         print("Reduced early!");
         step_size = max(step_size / explore_scale_factor, explore_step_min);
@@ -127,29 +124,29 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       
       double angle_to_corrected;
       if (set.size() > 1) {
-        angle_to_corrected = angle(most_recent.dec_space - second_most_recent.dec_space,
+        angle_to_corrected = angle(second_most_recent.dec_space - most_recent.dec_space,
                                    most_recent.dec_space - corrected.dec_space);
         if (isnan(angle_to_corrected)) {
           // In this case, most likely, the last two steps were almost
           // into the same direction which induced some numerical issue
-          angle_to_corrected = 180;
+          angle_to_corrected = 0;
         }
       } else {
-        angle_to_corrected = 180;
+        angle_to_corrected = 0;
       }
 
       if (correction_distance > step_size ||
-          angle_to_corrected < (180 - explore_angle_max)) {
+          angle_to_corrected > explore_angle_max) {
 
         if (correction_distance > step_size) {
           print("The correction distance was too large " + to_string(correction_distance) +
             "/" + to_string(step_size));
-        } else if (angle_to_corrected < (180 - explore_angle_max)) {
-          print("The angle to corrected was too small " + to_string(angle_to_corrected));
+        } else if (angle_to_corrected > explore_angle_max) {
+          print("The angle deviation was too big: " + to_string(angle_to_corrected));
         }
         
         if (step_size > explore_step_min) {
-          step_size = max(step_size / 2, explore_step_min);
+          step_size = max(step_size / explore_scale_factor, explore_step_min);
           continue;
         } else {
           if (!force_gradient_direction) {
@@ -161,35 +158,26 @@ tuple<efficient_set, vector<evaluated_point>> explore_efficient_set(
       
       /* (4) If successful until here, determine if we ridged or are in the same set */
       
-      if (norm(most_recent.dec_space - corrected.dec_space) > explore_step_max && force_gradient_direction) {
+      if (dominates(corrected.obj_space, most_recent.obj_space) ||
+         (norm(most_recent.dec_space - corrected.dec_space) > explore_step_max && force_gradient_direction)) {
         // Only executed if step_size == explore_step_min && force_gradient_direction
-        ridged_points.push_back(corrected);
-        terminate = true;
-      } else if (dominates(corrected.obj_space, most_recent.obj_space)) {
         ridged_points.push_back(corrected);
         terminate = true;
       } else {
         set.insert({corrected.obj_space[0], corrected});
-        // print(corrected.obj_space - most_recent.obj_space);
-        // print(angle_to_corrected);
-        // print(correction_distance);
-        // print(step_size);
-        // print("");
         
         /* (5) Update step size */
         
         if (force_gradient_direction) {
           force_gradient_direction = false;
         } else {
-          double angle_deviation = 180 - angle_to_corrected;
-          
           double step_size_factor;
           
-          if (angle_deviation == 0) {
+          if (angle_to_corrected == 0) {
             // Set to max
             step_size_factor = explore_scale_factor;
           } else {
-            step_size_factor = (explore_angle_max / 2) / angle_deviation;
+            step_size_factor = (explore_angle_max / 2) / angle_to_corrected;
 
             // Keep step size factor reasonable
             step_size_factor = min(step_size_factor, explore_scale_factor);

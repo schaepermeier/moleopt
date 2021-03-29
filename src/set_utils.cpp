@@ -48,6 +48,8 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
         if (inbounds(new_point.obj_space, {left_neighbor.obj_space[0], right_neighbor.obj_space[1]},
                                           {right_neighbor.obj_space[0], left_neighbor.obj_space[1]})) {
           
+          
+          // avoiding sqrt with square_norm
           double snorm_to_left = square_norm(new_point.dec_space - left_neighbor.dec_space);
           double snorm_to_right = square_norm(new_point.dec_space - right_neighbor.dec_space);
           double snorm_left_right = square_norm(left_neighbor.dec_space - right_neighbor.dec_space);
@@ -56,18 +58,17 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
           
           if (snorm_to_left <= epsilon_squared ||
               snorm_to_right <= epsilon_squared ||
-              (snorm_to_left + snorm_to_right) <= (snorm_left_right)) {
+              (snorm_to_left < snorm_left_right && snorm_to_right < snorm_left_right)) {
             return containing_set;
           }
         }
       }
     }
     
-    // avoiding sqrt with square_norm
+    // Additionally, check whether the selected point is epsilon close to
+    // any of the endpoints.
     if (square_norm(new_point.dec_space - left_bound.dec_space) <= epsilon_squared ||
         square_norm(new_point.dec_space - right_bound.dec_space) <= epsilon_squared) {
-      // Additionally, check whether the selected point is epsilon close to
-      // any of the endpoints.
       return containing_set;
     }
   }
