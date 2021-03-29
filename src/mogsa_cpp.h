@@ -13,6 +13,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
                 const vector<double_vector>& starting_points,
                 const double_vector& lower_bounds,
                 const double_vector& upper_bounds,
+                int max_local_sets,
                 double explore_step_min,
                 int refine_after_nstarts,
                 double refine_hv_target);
@@ -22,6 +23,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
                 const vector<double_vector>& starting_points,
                 const double_vector& lower,
                 const double_vector& upper,
+                int max_local_sets,
                 double epsilon_gradient,
                 double descent_direction_min,
                 double descent_step_min,

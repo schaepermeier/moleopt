@@ -14,6 +14,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower_bounds,
     const double_vector& upper_bounds,
+    int max_local_sets,
     double explore_step_min,
     int refine_after_nstarts,
     double refine_hv_target) {
@@ -65,7 +66,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
       {starting_point, -1}
     };
 
-    while (points_to_explore.size() > 0 && local_sets.size() < 1000) {
+    while (points_to_explore.size() > 0 && local_sets.size() < max_local_sets) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
       points_to_explore.pop_back();
       
@@ -147,6 +148,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     const vector<double_vector>& starting_points,
     const double_vector& lower,
     const double_vector& upper,
+    int max_local_sets = 1000,
     double epsilon_gradient = 1e-8,
     double descent_direction_min = 1e-8,
     double descent_step_min = 1e-6,
@@ -211,6 +213,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     starting_points,
     lower,
     upper,
+    max_local_sets,
     explore_step_min,
     refine_after_nstarts,
     refine_hv_target);

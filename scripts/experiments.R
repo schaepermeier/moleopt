@@ -68,6 +68,7 @@ while (run_counter < nruns) {
   }
 
   mogsa_trace <- run_mogsa(f, starting_points,
+                              max_local_sets = 1000,
                               epsilon_gradient = 1e-8,
                               descent_direction_min = 1e-6,
                               descent_step_min = 1e-6,

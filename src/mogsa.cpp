@@ -85,6 +85,7 @@ List run_mogsa_cpp(
     NumericMatrix starting_points,
     NumericVector lower_bounds,
     NumericVector upper_bounds,
+    int max_local_sets = 1000,
     double epsilon_gradient = 1e-8,
     double descent_direction_min = 1e-8,
     double descent_step_min = 1e-6,
@@ -172,6 +173,7 @@ List run_mogsa_cpp(
             rows_to_vectors(starting_points),
             lower,
             upper,
+            max_local_sets,
             explore_step_min,
             refine_after_nstarts,
             refine_hv_target);

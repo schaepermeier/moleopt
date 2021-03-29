@@ -5,7 +5,7 @@ nondominated <- function(m) {
     .Call(`_mogsacpp_nondominated`, m)
 }
 
-run_mogsa_cpp <- function(fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient = 1e-8, descent_direction_min = 1e-8, descent_step_min = 1e-6, descent_step_max = 1e-1, descent_scale_factor = 2, descent_armijo_factor = 1e-4, descent_history_size = 100L, descent_max_iter = 1000L, explore_step_min = 1e-4, explore_step_max = 1e-1, explore_angle_max = 45, explore_scale_factor = 2, refine_after_nstarts = 10L, refine_hv_target = 2e-5, custom_descent_fn = NULL, max_budget = infL, logging = "info") {
-    .Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_points, lower_bounds, upper_bounds, epsilon_gradient, descent_direction_min, descent_step_min, descent_step_max, descent_scale_factor, descent_armijo_factor, descent_history_size, descent_max_iter, explore_step_min, explore_step_max, explore_angle_max, explore_scale_factor, refine_after_nstarts, refine_hv_target, custom_descent_fn, max_budget, logging)
+run_mogsa_cpp <- function(fn, starting_points, lower_bounds, upper_bounds, max_local_sets = 1000L, epsilon_gradient = 1e-8, descent_direction_min = 1e-8, descent_step_min = 1e-6, descent_step_max = 1e-1, descent_scale_factor = 2, descent_armijo_factor = 1e-4, descent_history_size = 100L, descent_max_iter = 1000L, explore_step_min = 1e-4, explore_step_max = 1e-1, explore_angle_max = 45, explore_scale_factor = 2, refine_after_nstarts = 10L, refine_hv_target = 2e-5, custom_descent_fn = NULL, max_budget = infL, logging = "info") {
+    .Call(`_mogsacpp_run_mogsa_cpp`, fn, starting_points, lower_bounds, upper_bounds, max_local_sets, epsilon_gradient, descent_direction_min, descent_step_min, descent_step_max, descent_scale_factor, descent_armijo_factor, descent_history_size, descent_max_iter, explore_step_min, explore_step_max, explore_angle_max, explore_scale_factor, refine_after_nstarts, refine_hv_target, custom_descent_fn, max_budget, logging)
 }
 
