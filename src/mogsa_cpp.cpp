@@ -91,7 +91,10 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
         insert_into_set(local_sets[containing_set], point_to_explore);
         insert_nondominated(nondominated_points, point_to_explore.obj_space);
         
-        set_transitions.push_back({origin_set_id, containing_set});
+        // Avoid loops for individual sets
+        if (origin_set_id != containing_set) {
+          set_transitions.push_back({origin_set_id, containing_set});
+        }
       } else {
         // This point belongs to an unexplored set
         
