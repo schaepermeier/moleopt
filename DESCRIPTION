@@ -1,11 +1,11 @@
-Package: mogsacpp
+Package: moleopt
 Type: Package
-Title: A Bi-objective Optimizer Based on the Mogsa Concept
+Title: Multi-objective Landscape Explorer
 Version: 1.0
 Date: 2020-10-28
 Author: Lennart Schaepermeier
 Maintainer: Lennart Schaepermeier <schaepermeier@uni-muenster.de>
-Description: A bi-objective optimizer based on the Mogsa concept.
+Description: An implementation of the bi-objective MOLE.
 License: GPL (>= 2)
 Imports: Rcpp (>= 1.0.5)
 LinkingTo: Rcpp

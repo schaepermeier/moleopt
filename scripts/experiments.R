@@ -33,7 +33,7 @@ fn <- biobj_bbob_data$fn
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 20
+nstarts <- 1000
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
 
@@ -70,17 +70,17 @@ while (run_counter < nruns) {
   mogsa_trace <- run_mogsa(f, starting_points,
                               max_local_sets = 1000,
                               epsilon_gradient = 1e-8,
-                              descent_direction_min = 1e-6,
-                              descent_step_min = 1e-6,
+                              descent_direction_min = 1e-8,
+                              descent_step_min = 1e-8,
                               descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
                               descent_scale_factor = 2,
-                              descent_armijo_factor = 1e-4,
+                              descent_armijo_factor = 1e-6,
                               descent_history_size = 100,
                               descent_max_iter = 1000,
                               explore_step_min = 1e-4,
                               # explore_step_max = 1e-3,
                               explore_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
-                              explore_angle_max = 45,
+                              explore_angle_max = 20,
                               explore_scale_factor = 2,
                               refine_after_nstarts = 10,
                               refine_hv_target = -1,

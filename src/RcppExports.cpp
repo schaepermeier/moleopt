@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // nondominated
 LogicalVector nondominated(NumericMatrix m);
-RcppExport SEXP _mogsacpp_nondominated(SEXP mSEXP) {
+RcppExport SEXP _moleopt_nondominated(SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,7 +18,7 @@ END_RCPP
 }
 // run_mogsa_cpp
 List run_mogsa_cpp(Function fn, NumericMatrix starting_points, NumericVector lower_bounds, NumericVector upper_bounds, int max_local_sets, double epsilon_gradient, double descent_direction_min, double descent_step_min, double descent_step_max, double descent_scale_factor, double descent_armijo_factor, int descent_history_size, int descent_max_iter, double explore_step_min, double explore_step_max, double explore_angle_max, double explore_scale_factor, int refine_after_nstarts, double refine_hv_target, Nullable<Function> custom_descent_fn, long max_budget, std::string logging);
-RcppExport SEXP _mogsacpp_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP max_local_setsSEXP, SEXP epsilon_gradientSEXP, SEXP descent_direction_minSEXP, SEXP descent_step_minSEXP, SEXP descent_step_maxSEXP, SEXP descent_scale_factorSEXP, SEXP descent_armijo_factorSEXP, SEXP descent_history_sizeSEXP, SEXP descent_max_iterSEXP, SEXP explore_step_minSEXP, SEXP explore_step_maxSEXP, SEXP explore_angle_maxSEXP, SEXP explore_scale_factorSEXP, SEXP refine_after_nstartsSEXP, SEXP refine_hv_targetSEXP, SEXP custom_descent_fnSEXP, SEXP max_budgetSEXP, SEXP loggingSEXP) {
+RcppExport SEXP _moleopt_run_mogsa_cpp(SEXP fnSEXP, SEXP starting_pointsSEXP, SEXP lower_boundsSEXP, SEXP upper_boundsSEXP, SEXP max_local_setsSEXP, SEXP epsilon_gradientSEXP, SEXP descent_direction_minSEXP, SEXP descent_step_minSEXP, SEXP descent_step_maxSEXP, SEXP descent_scale_factorSEXP, SEXP descent_armijo_factorSEXP, SEXP descent_history_sizeSEXP, SEXP descent_max_iterSEXP, SEXP explore_step_minSEXP, SEXP explore_step_maxSEXP, SEXP explore_angle_maxSEXP, SEXP explore_scale_factorSEXP, SEXP refine_after_nstartsSEXP, SEXP refine_hv_targetSEXP, SEXP custom_descent_fnSEXP, SEXP max_budgetSEXP, SEXP loggingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,12 +50,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mogsacpp_nondominated", (DL_FUNC) &_mogsacpp_nondominated, 1},
-    {"_mogsacpp_run_mogsa_cpp", (DL_FUNC) &_mogsacpp_run_mogsa_cpp, 22},
+    {"_moleopt_nondominated", (DL_FUNC) &_moleopt_nondominated, 1},
+    {"_moleopt_run_mogsa_cpp", (DL_FUNC) &_moleopt_run_mogsa_cpp, 22},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_mogsacpp(DllInfo *dll) {
+RcppExport void R_init_moleopt(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
