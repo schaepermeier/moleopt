@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include "mogsa_cpp.h"
+#include "mole.h"
 #include "mo_descent.h"
 #include "explore_set.h"
 #include "utils.h"
@@ -80,7 +80,7 @@ LogicalVector nondominated(NumericMatrix m) {
 }
 
 // [[Rcpp::export]]
-List run_mogsa_cpp(
+List run_mole_cpp(
     Function fn,
     NumericMatrix starting_points,
     NumericVector lower_bounds,
@@ -112,7 +112,7 @@ List run_mogsa_cpp(
     MOLE_LOG_LEVEL = MOLE_LOG_LEVEL_INFO;
   }
   
-  /* ========= Setup and run Mogsa ========= */
+  /* ========= Setup and run MOLE ========= */
   
   long used_budget = 0;
   
@@ -163,9 +163,9 @@ List run_mogsa_cpp(
     explore_angle_max,
     explore_scale_factor);
   
-  // Run Mogsa
+  // Run MOLE
   
-  auto [local_sets, set_transitions] = run_mogsa(
+  auto [local_sets, set_transitions] = run_mole(
             mo_function,
             gradient_function,
             descent_function,

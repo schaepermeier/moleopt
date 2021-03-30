@@ -1,5 +1,5 @@
 #' @export
-run_mogsa <- function(fn,
+run_mole <- function(fn,
                       starting_points,
                       max_local_sets = 1000,
                       epsilon_gradient = 1e-8,
@@ -29,7 +29,7 @@ run_mogsa <- function(fn,
     upper <- smoof::getUpperBoxConstraints(fn)
   }
 
-  run_mogsa_cpp(fn = fn,
+  run_mole_cpp(fn = fn,
                 starting_points = starting_points,
                 lower = lower,
                 upper = upper, 

@@ -1,4 +1,4 @@
-#include "mogsa_cpp.h"
+#include "mole.h"
 #include "mo_descent.h"
 #include "set_utils.h"
 #include "explore_set.h"
@@ -6,7 +6,7 @@
 #include <set>
 #include <cmath>
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     const optim_fn& mo_function,
     const gradient_fn& gradient_function,
     const corrector_fn& descent_function,
@@ -23,7 +23,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   
   set_duplicated_fn already_visited_fn = check_duplicated_set;
   
-  /* ========= Mogsa++ Algorithm ========= */
+  /* ========= MOLE Algorithm ========= */
   
   vector<efficient_set> local_sets;
   vector<tuple<int, int>> set_transitions;
@@ -146,7 +146,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
   return {local_sets, set_transitions};
 }
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     const optim_fn& mo_function,
     const vector<double_vector>& starting_points,
     const double_vector& lower,
@@ -167,7 +167,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     int refine_after_nstarts = 10,
     double refine_hv_target = 2e-5) {
   
-  /* ========= Setup and run Mogsa ========= */
+  /* ========= Setup and run MOLE ========= */
   
   // Create Gradient of fn
   
@@ -206,9 +206,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
     explore_angle_max,
     explore_scale_factor);
   
-  // Run Mogsa
+  // Run MOLE
   
-  return run_mogsa(
+  return run_mole(
     mo_function,
     gradient_function,
     descent_function,

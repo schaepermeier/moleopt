@@ -1,7 +1,7 @@
 #' @export
-plot_dec_space <- function(mogsa_trace, lower, upper, color = "set_id") {
-  dfs <- lapply(seq_along(mogsa_trace$sets), function(i) {
-    data_dec <- as.data.frame(mogsa_trace$sets[[i]]$dec_space)
+plot_dec_space <- function(mole_trace, lower, upper, color = "set_id") {
+  dfs <- lapply(seq_along(mole_trace$sets), function(i) {
+    data_dec <- as.data.frame(mole_trace$sets[[i]]$dec_space)
     colnames(data_dec) <- c("x1", "x2")
     
     data_dec[,"set_id"] <- i
@@ -9,8 +9,8 @@ plot_dec_space <- function(mogsa_trace, lower, upper, color = "set_id") {
     data_dec
   })
   
-  dfs_obj <- lapply(seq_along(mogsa_trace$sets), function(i) {
-    data_obj <- as.data.frame(mogsa_trace$sets[[i]]$obj_space)
+  dfs_obj <- lapply(seq_along(mole_trace$sets), function(i) {
+    data_obj <- as.data.frame(mole_trace$sets[[i]]$obj_space)
     colnames(data_obj) <- c("y1", "y2")
 
     data_obj
@@ -41,9 +41,9 @@ plot_dec_space <- function(mogsa_trace, lower, upper, color = "set_id") {
 }
 
 #' @export
-plot_obj_space <- function(mogsa_trace, color = "set_id") {
-  dfs <- lapply(seq_along(mogsa_trace$sets), function(i) {
-    data_obj <- as.data.frame(mogsa_trace$sets[[i]]$obj_space)
+plot_obj_space <- function(mole_trace, color = "set_id") {
+  dfs <- lapply(seq_along(mole_trace$sets), function(i) {
+    data_obj <- as.data.frame(mole_trace$sets[[i]]$obj_space)
     colnames(data_obj) <- c("y1", "y2")
     
     data_obj[,"set_id"] <- i

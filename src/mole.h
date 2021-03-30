@@ -1,11 +1,11 @@
-#ifndef MOGSA_CPP_H
-#define MOGSA_CPP_H
+#ifndef MOLE_H
+#define MOLE_H
 
 #include "vector_utils.h"
 #include "types.h"
 #include <map>
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
                 const optim_fn& mo_function,
                 const gradient_fn& gradient_function,
                 const corrector_fn& descent_function,
@@ -18,7 +18,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
                 int refine_after_nstarts,
                 double refine_hv_target);
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mogsa(
+tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
                 const optim_fn& mo_function,
                 const vector<double_vector>& starting_points,
                 const double_vector& lower,

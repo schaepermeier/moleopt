@@ -18,7 +18,7 @@ g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
 d <- 2
 fid <- 10
-iid <- 10
+iid <- 5
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
@@ -67,28 +67,28 @@ while (run_counter < nruns) {
     starting_points <- do.call(rbind, starting_points)
   }
 
-  mogsa_trace <- run_mogsa(f, starting_points,
-                              max_local_sets = 1000,
-                              epsilon_gradient = 1e-8,
-                              descent_direction_min = 1e-8,
-                              descent_step_min = 1e-8,
-                              descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
-                              descent_scale_factor = 2,
-                              descent_armijo_factor = 1e-6,
-                              descent_history_size = 100,
-                              descent_max_iter = 1000,
-                              explore_step_min = 1e-4,
-                              # explore_step_max = 1e-3,
-                              explore_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
-                              explore_angle_max = 20,
-                              explore_scale_factor = 2,
-                              refine_after_nstarts = 10,
-                              refine_hv_target = -1,
-                              # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
-                              # lower = rep(-100, length(lower)),
-                              # upper = rep(100, length(upper)),
-                              max_budget = Inf,
-                              logging = "info"
+  mole_trace <- run_mole(f, starting_points,
+                            max_local_sets = 1000,
+                            epsilon_gradient = 1e-8,
+                            descent_direction_min = 1e-6,
+                            descent_step_min = 1e-6,
+                            descent_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
+                            descent_scale_factor = 2,
+                            descent_armijo_factor = 1e-4,
+                            descent_history_size = 100,
+                            descent_max_iter = 1000,
+                            explore_step_min = 1e-4,
+                            # explore_step_max = 1e-3,
+                            explore_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
+                            explore_angle_max = 20,
+                            explore_scale_factor = 2,
+                            refine_after_nstarts = 10,
+                            refine_hv_target = -1,
+                            # custom_descent_fn = create_lbfgsb_descent(f, lower, upper),
+                            # lower = rep(-100, length(lower)),
+                            # upper = rep(100, length(upper)),
+                            max_budget = Inf,
+                            logging = "info"
                            )
 
   if (log_y) {
@@ -116,23 +116,24 @@ while (run_counter < nruns) {
 
 # any(is.na(obj.opt.path))
 
-mogsa_trace$sets %>% length
+mole_trace$sets %>% length
 
-set_sizes <- sapply(mogsa_trace$sets, function(s) nrow(s$obj_space))
+set_sizes <- sapply(mole_trace$sets, function(s) nrow(s$obj_space))
 sum(set_sizes > 2)
 
-sum(mogsa_trace$transitions[,1] != -1)
+sum(mole_trace$transitions[,1] != -1)
 
-plot_dec_space(mogsa_trace, lower, upper, color = "set_id") +
+plot_dec_space(mole_trace, lower, upper, color = "set_id") +
   coord_fixed() +
   theme_minimal() +
   theme(legend.position = "none")
 
-plot_obj_space(mogsa_trace) +
+plot_obj_space(mole_trace) +
   theme_minimal() +
   theme(legend.position = "none")
 
-plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
+plot_dec_space(mole_trace, lower, upper, color = "domcount") +
+  theme_minimal() +
   coord_fixed() +
   theme(legend.position = "none")
 
@@ -153,7 +154,7 @@ plot_dec_space(mogsa_trace, lower, upper, color = "domcount") +
 #   geom_path(aes(x = x1, y = x2), data = opt.path)
 
 if (is.null(obj.opt.path)) {
-  obj.opt.path <- t(do.call(rbind, lapply(mogsa_trace$sets, function(l) l$obj_space)))
+  obj.opt.path <- t(do.call(rbind, lapply(mole_trace$sets, function(l) l$obj_space)))
 }
 
 ncol(obj.opt.path)
@@ -199,16 +200,16 @@ ggplot() +
 library(tidygraph)
 library(ggraph)
 
-set_transitions <- mogsa_trace$transitions[apply(mogsa_trace$transitions, 1, function(x) all(x >= 0)),,drop=FALSE] + 1
-nodes <- mogsa_trace$transitions[,2] %>% unique + 1
+set_transitions <- mole_trace$transitions[apply(mole_trace$transitions, 1, function(x) all(x >= 0)),,drop=FALSE] + 1
+nodes <- mole_trace$transitions[,2] %>% unique + 1
 
 colnames(set_transitions) <- c("from", "to")
 tbl_transitions <- tbl_graph(edges = as.data.frame(set_transitions), nodes = data.frame(name = nodes))
 
-weights <- (mogsa_trace$transitions[mogsa_trace$transitions[,1]==-1, 2] + 1) %>% tabulate(nbins = max(mogsa_trace$transitions + 1))
+weights <- (mole_trace$transitions[mole_trace$transitions[,1]==-1, 2] + 1) %>% tabulate(nbins = max(mole_trace$transitions + 1))
 prop <- compute_reach_proportions(tbl_transitions, weights)
 
-set_nd_counts <- compute_nondominated_sets(mogsa_trace$sets)
+set_nd_counts <- compute_nondominated_sets(mole_trace$sets)
 node_color <- ifelse(set_nd_counts > 0, "darkgreen", "magenta")
 
 (1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
@@ -231,7 +232,7 @@ sum(igraph::degree(condensation, mode = "out") == 0)
 
 ### 2D Decision Spaces ###
 
-node_pos <- set_medians(mogsa_trace$sets)
+node_pos <- set_medians(mole_trace$sets)
 
 ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
   geom_node_point(aes(size = 1), color = "black", shape = 21) +
@@ -265,8 +266,8 @@ ggsave("~/Desktop/thesis-pics/LESGraph.pdf", width = unit(3, "in"), height = uni
 
 ### Plotly 3D Sets ###
 
-dfs <- lapply(seq_along(mogsa_trace$sets), function(i) {
-  data_dec <- as.data.frame(mogsa_trace$sets[[i]]$dec_space)
+dfs <- lapply(seq_along(mole_trace$sets), function(i) {
+  data_dec <- as.data.frame(mole_trace$sets[[i]]$dec_space)
   colnames(data_dec) <- c("x1", "x2", "x3")
   
   data_dec[,"set_id"] <- i
@@ -274,8 +275,8 @@ dfs <- lapply(seq_along(mogsa_trace$sets), function(i) {
   data_dec
 })
 
-dfs_obj <- lapply(seq_along(mogsa_trace$sets), function(i) {
-  data_obj <- as.data.frame(mogsa_trace$sets[[i]]$obj_space)
+dfs_obj <- lapply(seq_along(mole_trace$sets), function(i) {
+  data_obj <- as.data.frame(mole_trace$sets[[i]]$obj_space)
   colnames(data_obj) <- c("y1", "y2")
   
   data_obj
