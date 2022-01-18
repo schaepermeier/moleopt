@@ -2,7 +2,7 @@ library(tidyverse)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 300L)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 500L)
 design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
@@ -199,10 +199,10 @@ ggsave("~/Desktop/thesis-pics/unbalance-bisphere-gm.png", width = unit(3, "in"),
 
 ### Original MOGSA ###
 
-library(mogsa)
+# library(mogsa)
 library(tidyverse)
 
-mogsa.result = mogsa::runMOGSA(c(1,1), fn, scale.step = 0.5, exploration.step = 0.1,
+mogsa.result <- mogsa::runMOGSA(c(1, 1), fn, scale.step = 0.5, exploration.step = 0.1,
                         lower = smoof::getLowerBoxConstraints(fn), upper = smoof::getUpperBoxConstraints(fn))
 
 g +
@@ -215,6 +215,9 @@ colnames(yvals) <- c("y1", "y2")
 
 g.obj +
   geom_point(data = as.data.frame(yvals), mapping = aes(y1, y2))
+
+ggsave("~/Desktop/thesis-pics/mogsa-aspar-obj.png", width = unit(3
+                                                               , "in"), height = unit(3, "in"))
 
 ### HEATMAPS
 

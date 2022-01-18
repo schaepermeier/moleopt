@@ -1,9 +1,10 @@
 library(tidyverse)
+library(moleopt)
 
 # ========= moPLOT =========
 
-design <- moPLOT::generateDesign(fn, points.per.dimension = 501L)
-design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = TRUE)
+design <- moPLOT::generateDesign(fn, points.per.dimension = 201L)
+design$obj.space <- moPLOT::calculateObjectiveValues(design$dec.space, fn, parallelize = FALSE)
 
 gradients <- moPLOT::computeGradientFieldGrid(design, normalized.scale = FALSE)
 divergence <- moPLOT::computeDivergenceGrid(gradients$multi.objective, design$dims, design$step.sizes)
@@ -14,17 +15,19 @@ g <- moPLOT::ggplotPLOT(design$dec.space, design$obj.space, less$sinks, less$hei
   coord_fixed()
 g.obj <- moPLOT::ggplotPLOTObjSpace(design$obj.space, less$sinks, less$height)
 
-# ========= MOGSA =========
+# ========= MOLE =========
 
 d <- 2
-fid <- 10
-iid <- 5
+fid <- 46
+iid <- 1
 biobj_bbob_data <- generateBiObjBBOBData(d, fid, iid)
 fn <- biobj_bbob_data$fn
 
 # fn <- smoof::makeWFG1Function(2)
 # fn <- smoof::makeDTLZ1Function(dimensions = 2, n.objectives = 2)
 # fn <- makeAsparFunction(dimensions = 2, n.objectives = 2)
+# fn <- smoof::makeGOMOPFunction(2L, funs = list(smoof::makeRastriginFunction(2),
+#                                                smoof::makeSphereFunction(2)))
 # fn <- smoof::makeMultiObjectiveFunction("test", fn = function(x) c(sum(x ** 2), sum(x ** 2)),
 #                                         par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5, -5), upper = c(5, 5)))
 # fn <- smoof::makeMMF4Function()
@@ -33,11 +36,12 @@ fn <- biobj_bbob_data$fn
 lower <- smoof::getLowerBoxConstraints(fn)
 upper <- smoof::getUpperBoxConstraints(fn)
 
-nstarts <- 1000
+nstarts <- 10
 starting_points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
 starting_points <- do.call(rbind, starting_points)
 
 # starting_points <- design$dec.space[less$sinks,]
+# starting_points <- matrix(c(0, 0), nrow = 1)
 
 obj.opt.path <- NULL
 opt.path <- NULL
@@ -80,7 +84,7 @@ while (run_counter < nruns) {
                             explore_step_min = 1e-4,
                             # explore_step_max = 1e-3,
                             explore_step_max = sqrt(sum((upper - lower) ** 2)) / 100,
-                            explore_angle_max = 20,
+                            explore_angle_max = 45,
                             explore_scale_factor = 2,
                             refine_after_nstarts = 10,
                             refine_hv_target = -1,
@@ -126,10 +130,14 @@ sum(mole_trace$transitions[,1] != -1)
 plot_dec_space(mole_trace, lower, upper, color = "set_id") +
   coord_fixed() +
   theme_minimal() +
+  labs(x = expression(x[1]),
+       y = expression(x[2])) +
   theme(legend.position = "none")
 
 plot_obj_space(mole_trace) +
   theme_minimal() +
+  labs(x = expression(y[1]),
+       y = expression(y[2])) +
   theme(legend.position = "none")
 
 plot_dec_space(mole_trace, lower, upper, color = "domcount") +
@@ -181,6 +189,8 @@ hv.norm <- prod(ref_point - ideal_point)
 hv <- ecr::computeHV(t(as.matrix(obj.opt.path[nondom,1:2])), ref.point = ref_point)
 hv / hv.norm
 
+(obj.opt.path %>% apply(2, min)) - ideal_point
+
 # log10(5/6 - hv / hv.norm)
 # log10(0.940003750569188 - hv / hv.norm)
 
@@ -190,39 +200,24 @@ ggplot() +
   geom_point(aes(x = ref_point[1], y = ref_point[2]), shape = "+", size = 5) +
   geom_point(aes(x = ideal_point[1], y = ideal_point[2]), shape = "+", size = 5) +
   xlim(ideal_point[1], ref_point[1]) +
-  ylim(ideal_point[2], ref_point[2])
+  ylim(ideal_point[2], ref_point[2]) +
+  theme_minimal() +
+  labs(x = expression(y[1]),
+       y = expression(y[2])) +
+  theme(legend.position = "none")
+
+ggsave(paste0("~/Desktop/thesis-pics/mole/set-hv-pp-", smoof::getName(fn), ".png"), width = unit(3, "in"), height = unit(3, "in"))
 
 # ggplot() +
 #   geom_point(aes(x = y1, y = y2, color = 1:nrow(obj.opt.path)), data = obj.opt.path)
 
 # Set transition graph
 
-library(tidygraph)
-library(ggraph)
+plot_set_interactions(mole_trace)
 
-set_transitions <- mole_trace$transitions[apply(mole_trace$transitions, 1, function(x) all(x >= 0)),,drop=FALSE] + 1
-nodes <- mole_trace$transitions[,2] %>% unique + 1
+# 2d
 
-colnames(set_transitions) <- c("from", "to")
-tbl_transitions <- tbl_graph(edges = as.data.frame(set_transitions), nodes = data.frame(name = nodes))
-
-weights <- (mole_trace$transitions[mole_trace$transitions[,1]==-1, 2] + 1) %>% tabulate(nbins = max(mole_trace$transitions + 1))
-prop <- compute_reach_proportions(tbl_transitions, weights)
-
-set_nd_counts <- compute_nondominated_sets(mole_trace$sets)
-node_color <- ifelse(set_nd_counts > 0, "darkgreen", "magenta")
-
-(1 / prop[set_nd_counts > 0]) %>% sort(decreasing = TRUE)
-
-ggraph(tbl_transitions, layout = "stress") +
-  geom_node_point(aes(size = 1), color = "black", shape = 21) +
-  geom_node_point(aes(size = prop), color = node_color) +
-  geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
-                end_cap = circle(4, "mm")) +
-  scale_size_area(limits = c(0,1)) +
-  theme(#legend.position = "none",
-        panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"))
+plot_set_interactions(mole_trace, layout_2d = TRUE)
 
 ## Find Local Search Traps
 
@@ -231,22 +226,6 @@ condensation <- igraph::simplify(condensation) # in particular: remove self-loop
 sum(igraph::degree(condensation, mode = "out") == 0)
 
 ### 2D Decision Spaces ###
-
-node_pos <- set_medians(mole_trace$sets)
-
-ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
-  geom_node_point(aes(size = 1), color = "black", shape = 21) +
-  geom_node_point(aes(size = prop), color = node_color) +
-  geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
-                end_cap = circle(4, "mm")) +
-  scale_size_area(limits = c(0,1)) +
-  theme_minimal() +
-  coord_fixed(xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2])) +
-  theme(legend.position = "none",
-        panel.background = element_rect(fill = NA, size = 0),
-        plot.background = element_rect(fill = NA, size = 0)) +
-  labs(x = expression(x[1]),
-       y = expression(x[2]))
 
 ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
   geom_node_point(aes(size = 0.5), fill = "black", shape = 21) +
