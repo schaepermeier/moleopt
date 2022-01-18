@@ -271,6 +271,7 @@ void refine_sets(vector<efficient_set>& sets,
     new_point.dec_space = (left.dec_space + right.dec_space) / 2;
     new_point.obj_space = fn(new_point.dec_space);
 
+    // This gives us 180 - alpha in comparison to the thesis!
     angle = min(angle_at_point(sets[set_id], left),
                 angle_at_point(sets[set_id], right));
     

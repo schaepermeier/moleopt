@@ -71,3 +71,48 @@ plot_obj_space <- function(mole_trace, color = "set_id") {
     g
   }
 }
+
+#' @export
+plot_set_interactions <- function(mole_trace, layout_2d = FALSE) {
+  set_transitions <- mole_trace$transitions[apply(mole_trace$transitions, 1, function(x) all(x >= 0)),,drop=FALSE] + 1
+  nodes <- mole_trace$transitions[,2] %>% unique + 1
+  
+  colnames(set_transitions) <- c("from", "to")
+  tbl_transitions <- tbl_graph(edges = as.data.frame(set_transitions), nodes = data.frame(name = nodes))
+  
+  weights <- (mole_trace$transitions[mole_trace$transitions[,1]==-1, 2] + 1) %>% tabulate(nbins = max(mole_trace$transitions + 1))
+  prop <- compute_reach_proportions(tbl_transitions, weights)
+  
+  set_nd_counts <- compute_nondominated_sets(mole_trace$sets)
+  node_color <- ifelse(set_nd_counts > 0, "darkgreen", "magenta")
+  
+  if (layout_2d) {
+    node_pos <- set_medians(mole_trace$sets)
+    
+    ggraph(tbl_transitions, layout = "manual", x = node_pos[,1], y = node_pos[,2]) +
+      geom_node_point(aes(size = 1), color = "black", shape = 21) +
+      geom_node_point(aes(size = prop), color = node_color) +
+      geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
+                    end_cap = circle(4, "mm")) +
+      scale_size_area(limits = c(0,1)) +
+      theme_minimal() +
+      coord_fixed(xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2])) +
+      theme(legend.position = "none",
+            panel.background = element_rect(fill = NA, size = 0),
+            plot.background = element_rect(fill = NA, size = 0)) +
+      labs(x = expression(x[1]),
+           y = expression(x[2]))
+  } else {
+    ggraph(tbl_transitions, layout = "stress") +
+      geom_node_point(aes(size = 1), color = "black", shape = 21) +
+      geom_node_point(aes(size = prop), color = node_color) +
+      geom_edge_fan(arrow = arrow(length = unit(4, "mm")),
+                    end_cap = circle(4, "mm")) +
+      scale_size_area(limits = c(0,1)) +
+      theme(#legend.position = "none",
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"))
+  }
+}
+
+

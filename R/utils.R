@@ -13,18 +13,40 @@ f_3d3d = function(x) c(f1_2(x), f2_2(x), f3_2(x))
 makeAsparFunction <- function(dimensions = 2, n.objectives = 2) {
   
   if (dimensions == 2 && n.objectives == 2) {
-    smoof::makeMultiObjectiveFunction(name = "2D->2D Test Function", id = "test_2d2d", description = "", fn = f_2d2d,
+    smoof::makeMultiObjectiveFunction(name = "2D->2D Aspar Function", id = "test_2d2d", description = "", fn = f_2d2d,
                                       par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-2,-1), upper = c(2,3)))
   } else if (dimensions == 2 && n.objectives == 3) {
-    smoof::makeMultiObjectiveFunction(name = "2D->3D Test Function", id = "test_2d3d", description = "", fn = f_2d3d,
+    smoof::makeMultiObjectiveFunction(name = "2D->3D Aspar Function", id = "test_2d3d", description = "", fn = f_2d3d,
                                       par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-2,-1), upper = c(2,3)))
   } else if (dimensions == 3 && n.objectives == 2) {
-    smoof::makeMultiObjectiveFunction(name = "3D->2D Test Function", id = "test_3d2d", description = "", fn = f_3d2d,
+    smoof::makeMultiObjectiveFunction(name = "3D->2D Aspar Function", id = "test_3d2d", description = "", fn = f_3d2d,
                                       par.set = ParamHelpers::makeNumericParamSet(len = 3, lower = c(-2,-1,-2), upper = c(2,3,2)))
   } else if (dimensions == 3 && n.objectives == 3) {
-    smoof::makeMultiObjectiveFunction(name = "3D->3D Test Function", id = "test_3d3d", description = "", fn = f_3d3d,
+    smoof::makeMultiObjectiveFunction(name = "3D->3D Aspar Function", id = "test_3d3d", description = "", fn = f_3d3d,
                                       par.set = ParamHelpers::makeNumericParamSet(len = 3, lower = c(-2,-1,-2), upper = c(2,3,2)))
   }
+}
+
+makeSGKFunction = function() {
+  g = function(x, h, c1, c2) {
+    h / (1 + 4 * ((x[1] - c1) ** 2 + (x[2] - c2) ** 2))
+  }
+  
+  f = function(x) c(
+    1 - 1 / (1 + 4 * ((x[1] - 2 / 3) ** 2 + (x[2] - 1) ** 2)),
+    1 - max(
+      g(x, 1.5, 0.5, 0),
+      g(x, 2, 0.25, 2 / 3),
+      g(x, 3, 1, 1)
+    )
+  )
+  
+  lower = c(-0.25, -0.25)
+  upper = c(1.25, 1.25)
+  
+  smoof::makeMultiObjectiveFunction(
+    name = "SGK Function", id = "sgk_function", description = "", fn = f,
+    par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = lower, upper = upper))
 }
 
 makeBiObjMPM2Function = function(dimensions = 2, n.peaks.1 = 3, topology.1 = "random", seed.1 = 4,
