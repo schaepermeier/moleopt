@@ -10,6 +10,20 @@ void print_info(const string& message) {
   }
 }
 
+void print_info(double a) {
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_INFO) {
+    cout << a << endl;
+  }
+}
+
+void print_info(const double_vector& v) {
+  if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_INFO) {
+    for (const auto& el : v) cout << el << " ";
+    
+    cout << endl;
+  }
+}
+
 void print(const string& message) {
   if (MOLE_LOG_LEVEL >= MOLE_LOG_LEVEL_DEBUG) {
     cout << message << endl;

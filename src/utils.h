@@ -18,6 +18,10 @@ extern MOLE_LOG_LEVEL_ENUM MOLE_LOG_LEVEL;
 
 void print_info(const string& message);
 
+void print_info(double a);
+
+void print_info(const double_vector& v);
+
 void print(const string& message);
 
 void print(double a);
