@@ -199,17 +199,29 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   
   corrector_fn descent_function;
   
-  descent_function = create_two_point_stepsize_descent(mo_function,
-                                                       gradient_function,
-                                                       lower,
-                                                       upper,
-                                                       descent_direction_min,
-                                                       descent_step_min,
-                                                       descent_step_max,
-                                                       descent_scale_factor,
-                                                       descent_armijo_factor,
-                                                       descent_history_size,
-                                                       descent_max_iter);
+  // descent_function = create_two_point_stepsize_descent(mo_function,
+  //                                                      gradient_function,
+  //                                                      lower,
+  //                                                      upper,
+  //                                                      descent_direction_min,
+  //                                                      descent_step_min,
+  //                                                      descent_step_max,
+  //                                                      descent_scale_factor,
+  //                                                      descent_armijo_factor,
+  //                                                      descent_history_size,
+  //                                                      descent_max_iter);
+
+  descent_function = create_slow_mo_descent(mo_function,
+                                           gradient_function,
+                                           lower,
+                                           upper,
+                                           descent_direction_min,
+                                           descent_step_min,
+                                           descent_step_max,
+                                           descent_scale_factor,
+                                           descent_armijo_factor,
+                                           descent_history_size,
+                                           descent_max_iter);
 
   // Create the explore_set function
   
@@ -240,4 +252,3 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     refine_hv_target);
   
 }
-

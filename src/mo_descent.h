@@ -28,4 +28,16 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
                                                int descent_history_size,
                                                int descent_max_iter);
 
+corrector_fn create_slow_mo_descent(const optim_fn& fn,
+                                    const gradient_fn& grad_fn,
+                                    const double_vector& lower,
+                                    const double_vector& upper,
+                                    double descent_direction_min,
+                                    double descent_step_min,
+                                    double descent_step_max,
+                                    double descent_scale_factor,
+                                    double descent_armijo_factor,
+                                    int descent_history_size,
+                                    int descent_max_iter);
+
 #endif

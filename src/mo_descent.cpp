@@ -322,3 +322,83 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
   return corr_fn;
 
 }
+
+corrector_fn create_slow_mo_descent(const optim_fn& fn,
+                                    const gradient_fn& grad_fn,
+                                    const double_vector& lower,
+                                    const double_vector& upper,
+                                    double descent_direction_min,
+                                    double descent_step_min,
+                                    double descent_step_max,
+                                    double descent_scale_factor,
+                                    double descent_armijo_factor,
+                                    int descent_history_size,
+                                    int descent_max_iter) {
+  
+  corrector_fn corr_fn = [&fn, &grad_fn, descent_direction_min,
+                          descent_step_min, descent_step_max,
+                          descent_scale_factor, descent_armijo_factor,
+                          descent_history_size, descent_max_iter,
+                          lower, upper]
+  (const evaluated_point& starting_point, double_vector ref_point, double max_descent) mutable {
+    evaluated_point current_point = starting_point;
+    int iters = 0;
+    double step_size = descent_step_min;
+    
+    vector<double_vector> gradients = grad_fn(starting_point);
+    
+    double_vector descent_direction = mo_steepest_descent_direction(gradients);
+    project_feasible_direction(descent_direction, current_point.dec_space, lower, upper);
+    double norm_descent_direction = norm(descent_direction);
+    
+    if (norm_descent_direction == 0) {
+      return starting_point;
+    }
+    
+    double best_improvement = 0;
+    double last_improvement_iter = 0;
+    evaluated_point best_point = starting_point;
+
+    while (norm(current_point.dec_space - starting_point.dec_space) < max_descent &&
+           norm_descent_direction > descent_direction_min &&
+           iters < descent_max_iter &&
+           iters - last_improvement_iter <= 10) {
+      
+      evaluated_point trial_point;
+      trial_point.dec_space = current_point.dec_space + step_size * descent_direction / norm_descent_direction;
+      ensure_boundary(trial_point.dec_space, lower, upper);
+      trial_point.obj_space = fn(trial_point.dec_space);
+      
+      double trial_improvement = compute_improvement(trial_point.obj_space, starting_point.obj_space);
+      double step_size_factor;
+      
+      if (trial_improvement > best_improvement) {
+        last_improvement_iter = iters;
+        best_improvement = trial_improvement;
+        best_point = trial_point;
+        step_size_factor = sqrt(2);
+        print_info("New best improvement: " + to_string(trial_improvement));
+      } else {
+        step_size_factor = 0.5;
+      }
+      
+      current_point = trial_point;
+      vector<double_vector> gradients = grad_fn(current_point);
+      descent_direction = mo_steepest_descent_direction(gradients);
+      project_feasible_direction(descent_direction, current_point.dec_space, lower, upper);
+      norm_descent_direction = norm(descent_direction);
+      
+      step_size *= step_size_factor;
+      step_size = min(step_size, descent_step_max);
+      step_size = max(step_size, descent_step_min);
+      
+      iters++;
+    }
+    
+    print_info("Iters (MO Descent): " + to_string(iters));
+    
+    return best_point;
+  };
+  
+  return corr_fn;
+}
