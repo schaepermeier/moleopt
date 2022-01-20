@@ -194,7 +194,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
       trial_point.obj_space = fn(trial_point.dec_space);
 
       alpha *= descent_scale_factor;
-    } while (dominates(trial_point.obj_space, current_iterate.obj_space) &&
+    } while (dominates(trial_point, current_iterate) &&
              norm(current_iterate.dec_space - starting_point.dec_space) < max_descent &&
              alpha * norm_descent_direction < descent_step_max);
 
@@ -277,7 +277,7 @@ corrector_fn create_two_point_stepsize_descent(const optim_fn& fn,
         // immediately dominating point
         if (alpha <= descent_step_min / norm_descent_direction) {
           if (!dominates(trial_point.obj_space + descent_armijo_factor * alpha * expected_improvements, ref_point) ||
-              !dominates(trial_point.obj_space, current_iterate.obj_space)) {
+              !dominates(trial_point, current_iterate)) {
               break;
           }
         }
