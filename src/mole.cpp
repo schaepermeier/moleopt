@@ -29,32 +29,35 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   vector<tuple<int, int>> set_transitions;
   
   set<double_vector> nondominated_points;
-
-  int starting_points_done = 0;
   
   bool budget_depleted = false;
   
+  vector<evaluated_point> starting_points_evaluated;
+  
   for (double_vector starting_point_dec : starting_points) {
-    starting_points_done++;
-    bool nondom_set_in_iter = false;
-    print_info("Starting point No. " + to_string(starting_points_done));
-    
     evaluated_point starting_point = {
       starting_point_dec,
       mo_function(starting_point_dec)
     };
     
-    if (budget_depleted) {
-      // Terminate if budget is empty, i.e.
-      // fn == inf
-      print_info("Terminating: Budget used up!");
-      break;
-    }
+    starting_points_evaluated.push_back(starting_point);
+  }
+  
+  starting_points_evaluated = sort_by_nondominated(starting_points_evaluated);
+  bool did_hv_refinement = false;
+  
+  for (int point_index = 0; point_index < starting_points_evaluated.size(); point_index++) {
+    evaluated_point starting_point = starting_points_evaluated[point_index];
+    print_info("Starting point No. " + to_string(point_index + 1));
+    // print_info(starting_point.dec_space);
+    // print_info(starting_point.obj_space);
+    
+    bool new_nondominated_set = false;
     
     double_vector ref_point_offset = {0, 0};
     // double_vector ref_point_offset = {inf, inf};
     starting_point = descent_function(starting_point, starting_point.obj_space + ref_point_offset, inf);
-
+    
     // The locally efficient points that should be explored
     // during this iteration of the local search.
     // That is the (descended) initial point, and all (descended)
@@ -65,7 +68,7 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     vector<tuple<evaluated_point, int>> points_to_explore = {
       {starting_point, -1}
     };
-
+    
     while (points_to_explore.size() > 0 && local_sets.size() < max_local_sets) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
       points_to_explore.pop_back();
@@ -102,6 +105,13 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
         print(point_to_explore.dec_space);
         print("Points left: " + to_string(points_to_explore.size()));
         
+        if (point_to_explore.obj_space[0] == inf) {
+          // Terminate if budget is empty, i.e.
+          // fn == inf
+          print_info("Terminating: Budget used up!");
+          break;
+        }
+        
         // Explore the new local set
         auto [set, ridged_points] = explore_set_function(point_to_explore);
         
@@ -109,16 +119,11 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
         int set_id = local_sets.size();
         local_sets.push_back(set);
         
-        int nondom_before = nondominated_points.size();
-        
         for (auto& [f1_val, point] : set) {
-          insert_nondominated(nondominated_points, point.obj_space);
+          bool insert_successful = insert_nondominated(nondominated_points, point.obj_space);
+          new_nondominated_set = new_nondominated_set && insert_successful;
         }
-        
-        if (nondominated_points.size() > nondom_before) {
-         nondom_set_in_iter = true;
-        }
-        
+
         // Log set transition
         set_transitions.push_back({origin_set_id, set_id});
         
@@ -129,19 +134,32 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
       }
     }
     
-    if (refine_hv_target > 0) {
-      if (starting_points_done == refine_after_nstarts ||
-         (starting_points_done > refine_after_nstarts && nondom_set_in_iter)) {
-        refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
+    /* ========= Post-Processing for HV Maximization ========= */
+    
+    if (refine_hv_target > 0 && (!did_hv_refinement || new_nondominated_set)) {
+      
+      bool all_dominated = true;
+      for (int upcoming_index = point_index + 1; upcoming_index < starting_points_evaluated.size(); upcoming_index++) {
+        all_dominated = all_dominated &&
+          point_dominated_by_set(starting_points_evaluated[upcoming_index].obj_space, nondominated_points);
       }
+      
+      if (all_dominated) {
+        print_info("refining after " + to_string(point_index + 1) + " points");
+        refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
+        
+        did_hv_refinement = true;
+      }
+      // if (point_index + 1 == refine_after_nstarts ||
+      //    (point_index + 1 > refine_after_nstarts && new_nondominated_set)) {
+      //   refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
+      // }
     }
+    
+    if (budget_depleted) break;
   }
   
-  if (!budget_depleted && (refine_hv_target > 0)) {
-    refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
-  }
-  
-  print(nondominated_points.size());
+  print("Size of nondominated set: " + to_string(nondominated_points.size()));
   
   return {local_sets, set_transitions};
 }
