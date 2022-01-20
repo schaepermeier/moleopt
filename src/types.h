@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <functional>
 
 using namespace std;
 
