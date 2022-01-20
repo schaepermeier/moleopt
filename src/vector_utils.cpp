@@ -77,6 +77,10 @@ bool dominates(const double_vector& a, const double_vector& b) {
   return a_not_worse && a_strictly_better;
 }
 
+bool dominates(const evaluated_point& a, const evaluated_point& b) {
+  return dominates(a.obj_space, b.obj_space);
+}
+
 bool strictly_dominates(const double_vector& a, const double_vector& b) {
   assert(a.size() == b.size());
   
@@ -87,6 +91,10 @@ bool strictly_dominates(const double_vector& a, const double_vector& b) {
   }
   
   return a_strictly_better;
+}
+
+bool strictly_dominates(const evaluated_point& a, const evaluated_point& b) {
+  return strictly_dominates(a.obj_space, b.obj_space);
 }
 
 double norm(const double_vector& vector) {

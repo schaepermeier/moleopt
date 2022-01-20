@@ -28,7 +28,9 @@ double angle(const double_vector& a, const double_vector& b);
 double_vector normalize(const double_vector& vector);
 
 bool dominates(const double_vector& a, const double_vector& b);
+bool dominates(const evaluated_point& a, const evaluated_point& b);
 bool strictly_dominates(const double_vector& a, const double_vector& b);
+bool strictly_dominates(const evaluated_point& a, const evaluated_point& b);
 
 void ensure_boundary(double_vector& vector, const double_vector& lower, const double_vector& upper);
 void project_feasible_direction(double_vector& search_direction, const double_vector& current_position,
