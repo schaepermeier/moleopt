@@ -10,6 +10,8 @@ int check_duplicated_set(const vector<efficient_set>&,
                          const evaluated_point&,
                          double epsilon);
 
+vector<evaluated_point> sort_by_nondominated(vector<evaluated_point> point_set);
+
 void insert_into_set(efficient_set& set,
                      const evaluated_point& new_point);
 
@@ -24,5 +26,7 @@ bool is_nondominated(const set<double_vector>& nondominated_points,
 
 void insert_nondominated(set<double_vector>& nondominated_points,
                          const double_vector& obj_vector);
+
+bool point_dominated_by_set(const double_vector& a, const set<double_vector>& s);
 
 #endif

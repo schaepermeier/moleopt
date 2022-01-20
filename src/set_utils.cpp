@@ -17,7 +17,7 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
                          double epsilon) {
   int containing_set = -1;
   double epsilon_squared = epsilon * epsilon;
-
+  
   for (auto& set : local_sets) {
     containing_set++;
     
@@ -46,7 +46,7 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
         // If our point really is "between" the objective values of two points of that set
         
         if (inbounds(new_point.obj_space, {left_neighbor.obj_space[0], right_neighbor.obj_space[1]},
-                                          {right_neighbor.obj_space[0], left_neighbor.obj_space[1]})) {
+        {right_neighbor.obj_space[0], left_neighbor.obj_space[1]})) {
           
           
           // avoiding sqrt with square_norm
@@ -76,6 +76,31 @@ int check_duplicated_set(const vector<efficient_set>& local_sets,
   return -1;
 }
 
+vector<evaluated_point> sort_by_nondominated(vector<evaluated_point> point_set) {
+  vector<evaluated_point> sorted_point_set;
+  
+  while (point_set.size() > 0) {
+    vector<evaluated_point> point_set_next_iteration;
+    
+    for (auto& p : point_set) {
+      bool p_is_dominated = false;
+      for (auto& q : point_set) {
+        p_is_dominated = p_is_dominated || dominates(q.obj_space, p.obj_space);
+      }
+      
+      if (p_is_dominated) {
+        point_set_next_iteration.push_back(p);
+      } else {
+        sorted_point_set.push_back(p);
+      }
+    }
+    
+    point_set = point_set_next_iteration;
+  }
+  
+  return sorted_point_set;
+}
+
 bool is_nondominated(const set<double_vector>& nondominated_points, const double_vector& obj_vector) {
   auto it = nondominated_points.lower_bound(obj_vector);
   
@@ -92,6 +117,16 @@ bool is_nondominated(const set<double_vector>& nondominated_points, const double
   }
   
   return true;
+}
+
+bool point_dominated_by_set(const double_vector& a, const set<double_vector>& s) {
+  for (auto& v : s) {
+    if (dominates(v, a)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 bool is_nondominated(const efficient_set& nondominated_points, const double_vector& obj_vector) {
@@ -200,18 +235,18 @@ void refine_sets(vector<efficient_set>& sets,
   
   double_vector opt_f1 = *(nondominated_points.begin());
   double_vector opt_f2 = *(nondominated_points.rbegin());
-
+  
   double lower_f1 = opt_f1[0];
   double upper_f2 = opt_f1[1];
   double upper_f1 = opt_f2[0];
   double lower_f2 = opt_f2[1];
-
+  
   // Maximal HV in this approximated objective space (for normalization)
-
+  
   double max_hv = (upper_f1 - lower_f1) * (upper_f2 - lower_f2);
-
+  
   double total_hv_potential = 0.0;
-
+  
   // Iterate over each set.
   // If one of two neighboring points is nondominated, compute potential HV gain between them
   
@@ -219,9 +254,9 @@ void refine_sets(vector<efficient_set>& sets,
                           const tuple<double, int, evaluated_point, evaluated_point>& b) { 
     return (get<0>(a) < get<0>(b)); 
   };
-
+  
   std::set<std::tuple<double, int, evaluated_point, evaluated_point>, decltype(sort_by_first)> potential_pairs(sort_by_first);
-
+  
   double_vector local_ideal;
   double_vector improvement;
   double hv_potential;
@@ -231,11 +266,11 @@ void refine_sets(vector<efficient_set>& sets,
   
   for (int set_id = 0; set_id < sets.size(); set_id++) {
     auto it = sets[set_id].begin();
-
+    
     current = it->second;
-
+    
     it++;
-
+    
     for (; it != sets[set_id].end(); it++) {
       prev = current;
       current = it->second;
@@ -249,10 +284,10 @@ void refine_sets(vector<efficient_set>& sets,
         improvement = current.obj_space - prev.obj_space;
         
         hv_potential = (current.obj_space[0] - prev.obj_space[0]) *
-                       (prev.obj_space[1] - current.obj_space[1]);
+          (prev.obj_space[1] - current.obj_space[1]);
         
         total_hv_potential += hv_potential;
-
+        
         potential_pairs.insert({hv_potential, set_id, prev, current});
       }
     }
@@ -261,31 +296,31 @@ void refine_sets(vector<efficient_set>& sets,
   evaluated_point new_point;
   double angle;
   double expected_max_descent;
-
+  
   while (total_hv_potential / max_hv > rel_hv_target && potential_pairs.size() > 0) {
     auto [hv_potential, set_id, left, right] = *(potential_pairs.rbegin());
     potential_pairs.erase(*(potential_pairs.rbegin()));
-
+    
     total_hv_potential -= hv_potential;
     
     new_point.dec_space = (left.dec_space + right.dec_space) / 2;
     new_point.obj_space = fn(new_point.dec_space);
-
+    
     // This gives us 180 - alpha in comparison to the thesis!
     angle = min(angle_at_point(sets[set_id], left),
                 angle_at_point(sets[set_id], right));
     
     expected_max_descent = 0.5 * norm(left.dec_space - right.dec_space) / tan(angle / 180 * M_PI / 2);
-
+    
     if (!isnan(expected_max_descent) && expected_max_descent > 1e-6) {
       new_point = descent_fn(new_point, new_point.obj_space, inf);
     } else {
       print("Skipping descent");
     }
-
+    
     if (inbounds(new_point.obj_space, {left.obj_space[0], right.obj_space[1]},
-                                      {right.obj_space[0], left.obj_space[1]})) {
-
+    {right.obj_space[0], left.obj_space[1]})) {
+      
       insert_into_set(sets[set_id], new_point);
       insert_nondominated(nondominated_points, new_point.obj_space);
       
@@ -326,7 +361,7 @@ void refine_sets(vector<efficient_set>& sets,
     } else {
       print_info("Sad HV Noises");
     }
-  
+    
   }
   
   // print(total_hv_potential / max_hv);
