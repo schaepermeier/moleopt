@@ -147,7 +147,9 @@ bool is_nondominated(const efficient_set& nondominated_points, const double_vect
   return true;
 }
 
-void insert_nondominated(set<double_vector>& nondominated_points, const double_vector& obj_vector) {
+
+bool insert_nondominated(set<double_vector>& nondominated_points, const double_vector& obj_vector) {
+  // return value: true if something was inserted, false otherwise
   if (is_nondominated(nondominated_points, obj_vector)) {
     vector<double_vector> to_delete;
     
@@ -165,7 +167,10 @@ void insert_nondominated(set<double_vector>& nondominated_points, const double_v
     }
     
     nondominated_points.insert(obj_vector);
+    return true;
   }
+  
+  return false;
 }
 
 void insert_into_set(efficient_set& set,

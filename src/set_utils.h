@@ -24,7 +24,7 @@ void refine_sets(vector<efficient_set>& sets,
 bool is_nondominated(const set<double_vector>& nondominated_points,
                      const double_vector& obj_vector);
 
-void insert_nondominated(set<double_vector>& nondominated_points,
+bool insert_nondominated(set<double_vector>& nondominated_points,
                          const double_vector& obj_vector);
 
 bool point_dominated_by_set(const double_vector& a, const set<double_vector>& s);
