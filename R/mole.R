@@ -1,4 +1,37 @@
+#' Execute MOLE algorithm
+#'
+#' @param fn Bi-objective \code{smoof} function to optimize
+#' @param starting_points Matrix of starting points to pass to MOLE
+#' @param max_local_sets Maximum number of local sets MOLE may track
+#' @param epsilon_gradient Epsilon used for gradient estimation
+#' @param descent_direction_min Minimal admissible length of MO gradient
+#' @param descent_step_min Minimal admissible step size for MO descent
+#' @param descent_step_max Maximal admissible step size for MO descent
+#' @param descent_scale_factor Multiplicative factor by which to scale consecutive descent steps
+#' @param descent_armijo_factor Armijo factor utilized in line search
+#' @param descent_history_size Size of descent history tracked for nonmonotone descent
+#' @param descent_max_iter Maximum number of iterations per descent call
+#' @param explore_step_min Minimal admissible step size for exploration along locally efficient set
+#' @param explore_step_max Maximal admissible step size for exploration along locally efficient set
+#' @param explore_angle_max Maximal admissible angle between consecutive steps for exploration along locally efficient set
+#' @param explore_scale_factor Multiplicative factor by which to scale consecutive descent steps
+#' @param refine_after_nstarts Number of starting points to fully evaluate before starting refinement
+#' @param refine_hv_target Target normalized Hypervolume gap
+#' @param custom_descent_fn Custom descent function implemented in R (optional)
+#' @param lower Lower box constraints, if different than specified in \code{fn} (optional)
+#' @param upper Lower box constraints, if different than specified in \code{fn} (optional)
+#' @param max_budget Maximum budget, if budget is constrained
+#' @param logging Logging level: \code{"none"}, \code{"debug"} or \code{"info"}
+#'
+#' @return List containing:
+#' \itemize{
+#'   \item \code{sets}: Discovered locally efficient sets
+#'   \item \code{transitions}: Transitions between locally efficient sets
+#' }
 #' @export
+#'
+#' @examples
+#' 
 run_mole <- function(fn,
                       starting_points,
                       max_local_sets = 1000,
