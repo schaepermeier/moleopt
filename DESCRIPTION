@@ -12,7 +12,8 @@ Imports:
     checkmate,
     tidygraph,
     ggraph,
-    smoof
+    smoof,
+    ggplot2
 LinkingTo: Rcpp
 SystemRequirements: C++17
 Encoding: UTF-8
