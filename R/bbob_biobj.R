@@ -29,7 +29,25 @@ iid_mapping <- matrix(
   byrow = TRUE
 )
 
+#' Generate data for bi-objective BBOB functions
+#'
+#' @param dimensions number of dimensions for the test problem
+#' @param fid function ID (1-55) of the bi-objective BBOB problem
+#' @param iid instance ID (1-15) of the bi-objective BBOB problem
+#'
+#' @return A list containing the following elements:
+#' \itemize{
+#'   \item \code{fn}: \code{smoof} function of the requested bi-objective BBOB function
+#'   \item \code{opt_f1}: Optimal input value for the first constituent BBOB function
+#'   \item \code{opt_f2}: Optimal input value for the second constituent BBOB function
+#'   \item \code{ref_point}: Reference point for this function as used by thebi-objective BBOB for evaluation
+#'   \item \code{ideal_point}: Ideal point for this function as used by the bi-objective BBOB for evaluation
+#' }
 #' @export
+#'
+#' @examples
+#' # generate data for the 1st instance of the 10th function in 2d
+#' bbob_biobj_data <- generateBiObjBBOBData(dimensions = 2L, fid = 10L, iid = 1L)
 generateBiObjBBOBData <- function(dimensions, fid, iid) {
   assert_choice(dimensions, c(2L, 3L, 5L, 10L, 20L, 40L))
   assert_choice(fid, 1L:55L)
