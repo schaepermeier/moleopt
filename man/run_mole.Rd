@@ -85,5 +85,7 @@ List containing:
 Execute MOLE algorithm
 }
 \examples{
-
+fn <- makeAsparFunction()
+starting_points <- rbind(c(1,1))
+mole_trace <- run_mole(fn, starting_points)
 }

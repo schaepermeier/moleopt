@@ -31,7 +31,10 @@
 #' @export
 #'
 #' @examples
-#' 
+#' fn <- makeAsparFunction()
+#' starting_points <- rbind(c(1,1))
+#' mole_trace <- run_mole(fn, starting_points)
+#' @useDynLib moleopt
 run_mole <- function(fn,
                       starting_points,
                       max_local_sets = 1000,
