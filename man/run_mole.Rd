@@ -14,13 +14,13 @@ run_mole(
   descent_step_max = 0.1,
   descent_scale_factor = 2,
   descent_armijo_factor = 1e-04,
-  descent_history_size = 100,
-  descent_max_iter = 1000,
+  descent_history_size = 100L,
+  descent_max_iter = 1000L,
   explore_step_min = 1e-04,
   explore_step_max = 0.1,
   explore_angle_max = 45,
   explore_scale_factor = 2,
-  refine_after_nstarts = 10,
+  refine_after_nstarts = 10L,
   refine_hv_target = 2e-05,
   custom_descent_fn = NULL,
   lower = NULL,
@@ -62,7 +62,7 @@ run_mole(
 
 \item{refine_after_nstarts}{Number of starting points to fully evaluate before starting refinement}
 
-\item{refine_hv_target}{Target normalized Hypervolume gap}
+\item{refine_hv_target}{Normalized Hypervolume gap target}
 
 \item{custom_descent_fn}{Custom descent function implemented in R (optional)}
 
@@ -82,7 +82,20 @@ List containing:
 }
 }
 \description{
-Execute MOLE algorithm
+Calling \code{run_mole} executes a run of the MOLE algorithm with the given parameter setting.
+}
+\details{
+The most important parameters to consider are:
+
+\itemize{
+  \item \code{fn}: The function to optimize
+  \item \code{starting_points}: Pre-defined starting points for MOLE
+  \item \code{descent_step_max}, \code{explore_step_max}: Here it may be beneficial to deviate from the
+  default setting of \code{1e-1}. A reasonable choice in many situations is 1/100 of the diagonal 
+  of the search space.
+  \item \code{refine_hv_target}: If post-processing for HV optimization should be used,
+  set this to the target value for the normalized hypervolume.
+}
 }
 \examples{
 fn <- makeAsparFunction()
