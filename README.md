@@ -4,7 +4,7 @@ The `{moleopt}` package implements an the bi-objective MOLE algorithm. MOLE itse
 
 For now, only the "developer" version is available from GitHub. To install it, either clone this repository or run:
 
-```{r}
+```r
 devtools::install_github("schaepermeier/moleopt")
 ```
 
@@ -12,7 +12,7 @@ Note that some of the documentation is still in-the-works. For now, you may find
 
 If you find the software provided by this repository helpful, please cite it using the metadata provided in CITATION.cff or by:
 
-```{latex}
+```bibtex
 @software{schaepermeier2022mole,
   author = {Schäpermeier, Lennart},
   month = {2},
