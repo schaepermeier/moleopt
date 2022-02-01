@@ -6,6 +6,8 @@
 #include <set>
 #include <cmath>
 
+bool evaluate_starting_points = false;
+
 tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     const optim_fn& mo_function,
     const gradient_fn& gradient_function,
@@ -35,12 +37,17 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   vector<evaluated_point> starting_points_evaluated;
   
   for (double_vector starting_point_dec : starting_points) {
-    evaluated_point starting_point = {
-      starting_point_dec,
-      mo_function(starting_point_dec)
-    };
-    
-    starting_points_evaluated.push_back(starting_point);
+    if (evaluate_starting_points) {
+      starting_points_evaluated.push_back({
+        starting_point_dec,
+        mo_function(starting_point_dec)
+      });
+    } else {
+      starting_points_evaluated.push_back({
+        starting_point_dec,
+        {inf, inf}
+      });
+    }
   }
   
   starting_points_evaluated = sort_by_nondominated(starting_points_evaluated);
@@ -72,6 +79,10 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     while (points_to_explore.size() > 0 && local_sets.size() < max_local_sets) {
       auto [point_to_explore, origin_set_id] = points_to_explore.back();
       points_to_explore.pop_back();
+      
+      if (!evaluate_starting_points && point_to_explore.obj_space[0] == inf) {
+        point_to_explore.obj_space = mo_function(point_to_explore.dec_space);
+      }
       
       if (point_to_explore.obj_space[0] == inf) {
         // Terminate if budget is empty, i.e.
@@ -136,24 +147,26 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     
     /* ========= Post-Processing for HV Maximization ========= */
     
-    if (refine_hv_target > 0 && (!did_hv_refinement || new_nondominated_set)) {
-      
-      bool all_dominated = true;
-      for (int upcoming_index = point_index + 1; upcoming_index < starting_points_evaluated.size(); upcoming_index++) {
-        all_dominated = all_dominated &&
-          point_dominated_by_set(starting_points_evaluated[upcoming_index].obj_space, nondominated_points);
-      }
-      
-      if (all_dominated) {
-        print_info("refining after " + to_string(point_index + 1) + " points");
+    if (refine_hv_target > 0) {
+      if (evaluate_starting_points && (!did_hv_refinement || new_nondominated_set)) {
+        
+        bool all_dominated = true;
+        for (int upcoming_index = point_index + 1; upcoming_index < starting_points_evaluated.size(); upcoming_index++) {
+          all_dominated = all_dominated &&
+            point_dominated_by_set(starting_points_evaluated[upcoming_index].obj_space, nondominated_points);
+        }
+        
+        if (all_dominated) {
+          print_info("refining after " + to_string(point_index + 1) + " points");
+          refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
+          
+          did_hv_refinement = true;
+        }
+      } else if ((point_index + 1 >= refine_after_nstarts) && (!did_hv_refinement || new_nondominated_set)) {
         refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
         
         did_hv_refinement = true;
       }
-      // if (point_index + 1 == refine_after_nstarts ||
-      //    (point_index + 1 > refine_after_nstarts && new_nondominated_set)) {
-      //   refine_sets(local_sets, refine_hv_target, mo_function, descent_function, nondominated_points);
-      // }
     }
     
     if (budget_depleted) break;
