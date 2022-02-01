@@ -49,9 +49,9 @@ iid_mapping <- matrix(
 #' # generate data for the 1st instance of the 10th function in 2d
 #' bbob_biobj_data <- generateBiObjBBOBData(dimensions = 2L, fid = 10L, iid = 1L)
 generateBiObjBBOBData <- function(dimensions, fid, iid) {
-  assert_choice(dimensions, c(2L, 3L, 5L, 10L, 20L, 40L))
-  assert_choice(fid, 1L:55L)
-  assert_choice(iid, 1L:15L)
+  checkmate::assert_choice(dimensions, c(2L, 3L, 5L, 10L, 20L, 40L))
+  checkmate::assert_choice(fid, 1L:55L)
+  checkmate::assert_choice(iid, 1L:15L)
   
   output <- list()
   
