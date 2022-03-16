@@ -19,7 +19,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     int max_local_sets,
     double explore_step_min,
     int refine_after_nstarts,
-    double refine_hv_target) {
+    double refine_hv_target,
+    long max_budget,
+    long* used_budget) {
   
   /* ========= Setup ========= */
   
@@ -56,6 +58,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   for (int point_index = 0; point_index < starting_points_evaluated.size(); point_index++) {
     evaluated_point starting_point = starting_points_evaluated[point_index];
     print_info("Starting point No. " + to_string(point_index + 1));
+    // print_info("Evals: ");
+    // print_info(*(used_budget));
     // print_info(starting_point.dec_space);
     // print_info(starting_point.obj_space);
     
@@ -251,6 +255,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   
   // Run MOLE
   
+  long max_budget = -1;
+  long used_budget = 0;
+  
   return run_mole(
     mo_function,
     gradient_function,
@@ -262,6 +269,8 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
     max_local_sets,
     explore_step_min,
     refine_after_nstarts,
-    refine_hv_target);
+    refine_hv_target,
+    max_budget,
+    (&used_budget));
   
 }

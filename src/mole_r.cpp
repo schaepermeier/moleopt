@@ -7,15 +7,15 @@
 using namespace Rcpp;
 using namespace std;
 
-optim_fn as_optim_fn(Function fn, long& used_budget, long& max_budget) {
+optim_fn as_optim_fn(Function fn, long* used_budget, long& max_budget) {
   optim_fn f = [fn, used_budget, max_budget](const double_vector& x) mutable {
-    if (max_budget > 0 && used_budget >= max_budget) {
+    if (max_budget > 0 && (*used_budget) >= max_budget) {
       double_vector retval(2, inf);
       return retval;
     }
     
     NumericVector result = fn(x);
-    used_budget++;
+    (*used_budget)++;
     
     // print(used_budget);
     
@@ -116,7 +116,7 @@ List run_mole_cpp(
   
   long used_budget = 0;
   
-  optim_fn mo_function = as_optim_fn(fn, used_budget, max_budget);
+  optim_fn mo_function = as_optim_fn(fn, (&used_budget), max_budget);
   double_vector lower = as<double_vector>(lower_bounds);
   double_vector upper = as<double_vector>(upper_bounds);
   
@@ -187,7 +187,9 @@ List run_mole_cpp(
             max_local_sets,
             explore_step_min,
             refine_after_nstarts,
-            refine_hv_target);
+            refine_hv_target,
+            max_budget,
+            (&used_budget));
   
   /* ========= Postprocess the result ========= */
   

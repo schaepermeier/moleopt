@@ -16,7 +16,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
                 int max_local_sets,
                 double explore_step_min,
                 int refine_after_nstarts,
-                double refine_hv_target);
+                double refine_hv_target,
+                long max_budget,
+                long* used_budget);
 
 tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
                 const optim_fn& mo_function,
