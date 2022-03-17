@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{makeSGKFunction}
 \alias{makeSGKFunction}
-\title{`smoof` generator for the SGK problem}
+\title{\code{smoof} generator for the SGK problem}
 \usage{
 makeSGKFunction()
 }
@@ -10,7 +10,7 @@ makeSGKFunction()
 \code{smoof} function containing the bi-objective SGK problem
 }
 \description{
-`smoof` generator for the SGK problem
+\code{smoof} generator for the SGK problem
 }
 \examples{
 fn <- makeSGKFunction()

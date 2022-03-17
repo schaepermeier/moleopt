@@ -77,8 +77,9 @@ run_mole(
 \value{
 List containing:
 \itemize{
-  \item \code{sets}: Discovered locally efficient sets
-  \item \code{transitions}: Transitions between locally efficient sets
+\item \code{sets}: Discovered locally efficient sets
+\item \code{transitions}: Transitions between locally efficient sets
+\item \code{budget_at_starting_points}: used budget before starting point was used
 }
 }
 \description{
@@ -86,15 +87,14 @@ Calling \code{run_mole} executes a run of the MOLE algorithm with the given para
 }
 \details{
 The most important parameters to consider are:
-
 \itemize{
-  \item \code{fn}: The function to optimize
-  \item \code{starting_points}: Pre-defined starting points for MOLE
-  \item \code{descent_step_max}, \code{explore_step_max}: Here it may be beneficial to deviate from the
-  default setting of \code{1e-1}. A reasonable choice in many situations is 1/100 of the diagonal 
-  of the search space.
-  \item \code{refine_hv_target}: If post-processing for HV optimization should be used,
-  set this to the target value for the normalized hypervolume.
+\item \code{fn}: The function to optimize
+\item \code{starting_points}: Pre-defined starting points for MOLE
+\item \code{descent_step_max}, \code{explore_step_max}: Here it may be beneficial to deviate from the
+default setting of \code{1e-1}. A reasonable choice in many situations is 1/100 of the diagonal
+of the search space.
+\item \code{refine_hv_target}: If post-processing for HV optimization should be used,
+set this to the target value for the normalized hypervolume.
 }
 }
 \examples{

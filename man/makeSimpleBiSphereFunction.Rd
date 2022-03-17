@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{makeSimpleBiSphereFunction}
 \alias{makeSimpleBiSphereFunction}
-\title{`smoof` generator for simple Bi-Sphere problem}
+\title{\code{smoof} generator for simple Bi-Sphere problem}
 \usage{
 makeSimpleBiSphereFunction()
 }
@@ -11,7 +11,7 @@ makeSimpleBiSphereFunction()
 centers \code{c(-1, -1)} and \code{c(1, 1)}
 }
 \description{
-`smoof` generator for simple Bi-Sphere problem
+\code{smoof} generator for simple Bi-Sphere problem
 }
 \examples{
 fn <- makeSimpleBiSphereFunction()

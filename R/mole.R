@@ -1,20 +1,18 @@
 #' Execute MOLE algorithm
 #' 
-#' Calling \code{run_mole} executes a run of the MOLE algorithm with the given parameter setting.
+#' Calling `run_mole` executes a run of the MOLE algorithm with the given parameter setting.
 #' 
 #' The most important parameters to consider are:
 #' 
-#' \itemize{
-#'   \item \code{fn}: The function to optimize
-#'   \item \code{starting_points}: Pre-defined starting points for MOLE
-#'   \item \code{descent_step_max}, \code{explore_step_max}: Here it may be beneficial to deviate from the
-#'   default setting of \code{1e-1}. A reasonable choice in many situations is 1/100 of the diagonal 
+#' - `fn`: The function to optimize
+#' - `starting_points`: Pre-defined starting points for MOLE
+#' - `descent_step_max`, `explore_step_max`: Here it may be beneficial to deviate from the
+#'   default setting of `1e-1`. A reasonable choice in many situations is 1/100 of the diagonal 
 #'   of the search space.
-#'   \item \code{refine_hv_target}: If post-processing for HV optimization should be used,
+#' - `refine_hv_target`: If post-processing for HV optimization should be used,
 #'   set this to the target value for the normalized hypervolume.
-#' }
 #'
-#' @param fn Bi-objective \code{smoof} function to optimize
+#' @param fn Bi-objective `smoof` function to optimize
 #' @param starting_points Matrix of starting points to pass to MOLE
 #' @param max_local_sets Maximum number of local sets MOLE may track
 #' @param epsilon_gradient Epsilon used for gradient estimation
@@ -32,16 +30,19 @@
 #' @param refine_after_nstarts Number of starting points to fully evaluate before starting refinement
 #' @param refine_hv_target Normalized Hypervolume gap target
 #' @param custom_descent_fn Custom descent function implemented in R (optional)
-#' @param lower Lower box constraints, if different than specified in \code{fn} (optional)
-#' @param upper Lower box constraints, if different than specified in \code{fn} (optional)
+#' @param lower Lower box constraints, if different than specified in `fn` (optional)
+#' @param upper Lower box constraints, if different than specified in `fn` (optional)
 #' @param max_budget Maximum budget, if budget is constrained
-#' @param logging Logging level: \code{"none"}, \code{"debug"} or \code{"info"}
+#' @param logging Logging level: `"none"`, `"debug"` or `"info"`
 #'
-#' @return List containing:
-#' \itemize{
-#'   \item \code{sets}: Discovered locally efficient sets
-#'   \item \code{transitions}: Transitions between locally efficient sets
-#' }
+#' @return
+#' 
+#' List containing:
+#' 
+#' - `sets`: Discovered locally efficient sets
+#' - `transitions`: Transitions between locally efficient sets
+#' - `budget_at_starting_points`: used budget before starting point was used
+#' 
 #' @export
 #'
 #' @examples

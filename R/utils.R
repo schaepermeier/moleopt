@@ -12,7 +12,7 @@ f_3d3d <- function(x) c(f1_2(x), f2_2(x), f3_2(x))
 
 #' `smoof` generator for the Aspar problem with 2-3 dimensions and objectives.
 #'
-#' @return \code{smoof} function of the configured Aspar problem
+#' @return `smoof` function of the configured Aspar problem
 #' @export
 #'
 #' @examples
@@ -35,7 +35,7 @@ makeAsparFunction <- function(dimensions = 2L, n.objectives = 2L) {
 
 #' `smoof` generator for the SGK problem
 #'
-#' @return \code{smoof} function containing the bi-objective SGK problem
+#' @return `smoof` function containing the bi-objective SGK problem
 #' @export
 #'
 #' @examples
@@ -72,7 +72,7 @@ makeSGKFunction <- function() {
 #' @param topology.2 Type of topology for second MPM2 problem
 #' @param seed.2 Random seed for second MPM2 problem
 #'
-#' @return \code{smoof} function of the configured bi-objective MPM2 function
+#' @return `smoof` function of the configured bi-objective MPM2 function
 #' @export
 #'
 #' @examples
@@ -90,8 +90,8 @@ makeBiObjMPM2Function <- function(dimensions = 2, n.peaks.1 = 3, topology.1 = "r
 
 #' `smoof` generator for simple Bi-Sphere problem
 #'
-#' @return \code{smoof} function containing a simple Bi-Sphere problem with
-#' centers \code{c(-1, -1)} and \code{c(1, 1)}
+#' @return `smoof` function containing a simple Bi-Sphere problem with
+#' centers `c(-1, -1)` and `c(1, 1)`
 #' @export
 #'
 #' @examples
@@ -108,7 +108,7 @@ makeSimpleBiSphereFunction <- function() {
 
 #' `smoof` generator for Bi-Rosenbrock function
 #'
-#' @return \code{smoof} function containing the Bi-Rosenbrock function
+#' @return `smoof` function containing the Bi-Rosenbrock function
 #' @export
 #'
 #' @examples
@@ -132,14 +132,14 @@ makeBiRosenbrockFunction <- function() {
 }
 
 
-#' Generates a vector distributed uniformly at random between \code{lower} and
-#' \code{upper}
+#' Generates a vector distributed uniformly at random between `lower` and
+#' `upper`
 #'
 #' @param lower lower bounds of search space
 #' @param upper upper bounds of search space
 #'
-#' @return Vector of length \code{length(lower)} with entries uniformly at
-#' random between \code{lower} and \code{upper} per dimension
+#' @return Vector of length `length(lower)` with entries uniformly at
+#' random between `lower` and `upper` per dimension
 #' 
 #' @export
 #' @examples

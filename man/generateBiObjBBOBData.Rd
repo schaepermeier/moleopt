@@ -16,11 +16,11 @@ generateBiObjBBOBData(dimensions, fid, iid)
 \value{
 A list containing the following elements:
 \itemize{
-  \item \code{fn}: \code{smoof} function of the requested bi-objective BBOB function
-  \item \code{opt_f1}: Optimal input value for the first constituent BBOB function
-  \item \code{opt_f2}: Optimal input value for the second constituent BBOB function
-  \item \code{ref_point}: Reference point for this function as used by thebi-objective BBOB for evaluation
-  \item \code{ideal_point}: Ideal point for this function as used by the bi-objective BBOB for evaluation
+\item \code{fn}: \code{smoof} function of the requested bi-objective BBOB function
+\item \code{opt_f1}: Optimal input value for the first constituent BBOB function
+\item \code{opt_f2}: Optimal input value for the second constituent BBOB function
+\item \code{ref_point}: Reference point for this function as used by the bi-objective BBOB for evaluation
+\item \code{ideal_point}: Ideal point for this function as used by the bi-objective BBOB for evaluation
 }
 }
 \description{

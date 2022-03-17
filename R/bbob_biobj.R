@@ -36,13 +36,11 @@ iid_mapping <- matrix(
 #' @param iid instance ID (1-15) of the bi-objective BBOB problem
 #'
 #' @return A list containing the following elements:
-#' \itemize{
-#'   \item \code{fn}: \code{smoof} function of the requested bi-objective BBOB function
-#'   \item \code{opt_f1}: Optimal input value for the first constituent BBOB function
-#'   \item \code{opt_f2}: Optimal input value for the second constituent BBOB function
-#'   \item \code{ref_point}: Reference point for this function as used by thebi-objective BBOB for evaluation
-#'   \item \code{ideal_point}: Ideal point for this function as used by the bi-objective BBOB for evaluation
-#' }
+#' - `fn`: `smoof` function of the requested bi-objective BBOB function
+#' - `opt_f1`: Optimal input value for the first constituent BBOB function
+#' - `opt_f2`: Optimal input value for the second constituent BBOB function
+#' - `ref_point`: Reference point for this function as used by the bi-objective BBOB for evaluation
+#' - `ideal_point`: Ideal point for this function as used by the bi-objective BBOB for evaluation
 #' @export
 #'
 #' @examples

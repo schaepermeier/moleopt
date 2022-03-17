@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{makeAsparFunction}
 \alias{makeAsparFunction}
-\title{`smoof` generator for the Aspar problem with 2-3 dimensions and objectives.}
+\title{\code{smoof} generator for the Aspar problem with 2-3 dimensions and objectives.}
 \usage{
 makeAsparFunction(dimensions = 2L, n.objectives = 2L)
 }
@@ -10,7 +10,7 @@ makeAsparFunction(dimensions = 2L, n.objectives = 2L)
 \code{smoof} function of the configured Aspar problem
 }
 \description{
-`smoof` generator for the Aspar problem with 2-3 dimensions and objectives.
+\code{smoof} generator for the Aspar problem with 2-3 dimensions and objectives.
 }
 \examples{
 fn <- makeAsparFunction(dimensions = 2L, n.objectives = 2L)

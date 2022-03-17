@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{makeBiObjMPM2Function}
 \alias{makeBiObjMPM2Function}
-\title{`smoof` generator for bi-objective MPM2 problems}
+\title{\code{smoof} generator for bi-objective MPM2 problems}
 \usage{
 makeBiObjMPM2Function(
   dimensions = 2,
@@ -33,7 +33,7 @@ makeBiObjMPM2Function(
 \code{smoof} function of the configured bi-objective MPM2 function
 }
 \description{
-`smoof` generator for bi-objective MPM2 problems
+\code{smoof} generator for bi-objective MPM2 problems
 }
 \examples{
 fn <- makeBiObjMPM2Function(dimensions = 2,

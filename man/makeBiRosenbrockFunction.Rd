@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{makeBiRosenbrockFunction}
 \alias{makeBiRosenbrockFunction}
-\title{`smoof` generator for Bi-Rosenbrock function}
+\title{\code{smoof} generator for Bi-Rosenbrock function}
 \usage{
 makeBiRosenbrockFunction()
 }
@@ -10,7 +10,7 @@ makeBiRosenbrockFunction()
 \code{smoof} function containing the Bi-Rosenbrock function
 }
 \description{
-`smoof` generator for Bi-Rosenbrock function
+\code{smoof} generator for Bi-Rosenbrock function
 }
 \examples{
 fn <- makeBiRosenbrockFunction()
