@@ -22,9 +22,12 @@ Generates a vector distributed uniformly at random between \code{lower} and
 }
 \examples{
 # Create a vector of length 2 with elements uniformly at random between -5 and 5
-runif_box(c(-5, -5), c(5, 5))
+lower <- c(-5, -5)
+upper <- c(5, 5)
+runif_box(lower, upper)
 
 # Generating a matrix of values
-points <- lapply(1:nstarts, function(x) runif_box(lower, upper))
+nstarts <- 10L
+points <- lapply(1L:nstarts, function(x) runif_box(lower, upper))
 points_matrix <- do.call(rbind, points)
 }

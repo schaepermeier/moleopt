@@ -6,6 +6,11 @@
 \usage{
 makeAsparFunction(dimensions = 2L, n.objectives = 2L)
 }
+\arguments{
+\item{dimensions}{Number of dimensions (2-3)}
+
+\item{n.objectives}{Number of dimensions (2-3)}
+}
 \value{
 \code{smoof} function of the configured Aspar problem
 }
