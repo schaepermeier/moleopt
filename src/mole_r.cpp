@@ -176,7 +176,7 @@ List run_mole_cpp(
   
   // Run MOLE
   
-  auto [local_sets, set_transitions] = run_mole(
+  auto [local_sets, set_transitions, eval_start_points] = run_mole(
             mo_function,
             gradient_function,
             descent_function,
@@ -241,6 +241,7 @@ List run_mole_cpp(
   
   return_values["sets"] = sets;
   return_values["transitions"] = transitions;
+  return_values["eval_start_points"] = eval_start_points;
 
   return return_values;
 }

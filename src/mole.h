@@ -5,7 +5,9 @@
 #include "types.h"
 #include <map>
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
+tuple<vector<efficient_set>,
+      vector<tuple<int, int>>,
+      vector<long>> run_mole(
                 const optim_fn& mo_function,
                 const gradient_fn& gradient_function,
                 const corrector_fn& descent_function,
@@ -20,7 +22,9 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
                 long max_budget,
                 long* used_budget);
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
+tuple<vector<efficient_set>,
+      vector<tuple<int, int>>,
+      vector<long>> run_mole(
                 const optim_fn& mo_function,
                 const vector<double_vector>& starting_points,
                 const double_vector& lower,

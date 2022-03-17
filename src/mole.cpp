@@ -8,7 +8,9 @@
 
 bool evaluate_starting_points = false;
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
+tuple<vector<efficient_set>,
+      vector<tuple<int, int>>,
+      vector<long>> run_mole(
     const optim_fn& mo_function,
     const gradient_fn& gradient_function,
     const corrector_fn& descent_function,
@@ -54,10 +56,12 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   
   starting_points_evaluated = sort_by_nondominated(starting_points_evaluated);
   bool did_hv_refinement = false;
+  vector<long> eval_start_points(starting_points.size(), -1);
   
   for (int point_index = 0; point_index < starting_points_evaluated.size(); point_index++) {
     evaluated_point starting_point = starting_points_evaluated[point_index];
     print_info("Starting point No. " + to_string(point_index + 1));
+    eval_start_points[point_index] = *(used_budget);
     // print_info("Evals: ");
     // print_info(*(used_budget));
     // print_info(starting_point.dec_space);
@@ -178,10 +182,12 @@ tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
   
   print("Size of nondominated set: " + to_string(nondominated_points.size()));
   
-  return {local_sets, set_transitions};
+  return {local_sets, set_transitions, eval_start_points};
 }
 
-tuple<vector<efficient_set>, vector<tuple<int, int>>> run_mole(
+tuple<vector<efficient_set>,
+      vector<tuple<int, int>>,
+      vector<long>> run_mole(
     const optim_fn& mo_function,
     const vector<double_vector>& starting_points,
     const double_vector& lower,
