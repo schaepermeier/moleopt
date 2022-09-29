@@ -73,7 +73,7 @@ plot_obj_space <- function(mole_trace, color = "set_id") {
 }
 
 #' @export
-plot_set_interactions <- function(mole_trace, layout_2d = FALSE) {
+plot_set_interactions <- function(mole_trace, layout_2d = FALSE, lower = NULL, upper = NULL) {
   set_transitions <- mole_trace$transitions[apply(mole_trace$transitions, 1, function(x) all(x >= 0)),,drop=FALSE] + 1
   nodes <- mole_trace$transitions[,2] %>% unique + 1
   
