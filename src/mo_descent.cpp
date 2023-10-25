@@ -105,7 +105,9 @@ double_vector mo_steepest_descent_direction(const vector<double_vector>& gradien
       // norms[0] < 1e-6 ||
       // norms[1] < 1e-6 ||
       isnan(factor_grad_1) ||
-      isnan(1 / factor_grad_1)) {
+      isnan(1 / factor_grad_1) ||
+      isinf(factor_grad_1) ||
+      isinf(1 / factor_grad_1)) {
     return 0 * gradients[0];
   }
   
