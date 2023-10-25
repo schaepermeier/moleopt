@@ -101,7 +101,7 @@ List run_mole_cpp(
     int refine_after_nstarts = 10,
     double refine_hv_target = 2e-5,
     Nullable<Function> custom_descent_fn = R_NilValue,
-    long max_budget = inf,
+    long max_budget = -1,
     std::string logging = "info") {
   
   if (logging == "none") {
