@@ -10,6 +10,18 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// computeHVArchiveCPP
+NumericVector computeHVArchiveCPP(NumericMatrix archive, NumericVector ref_point);
+RcppExport SEXP _moleopt_computeHVArchiveCPP(SEXP archiveSEXP, SEXP ref_pointSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type archive(archiveSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type ref_point(ref_pointSEXP);
+    rcpp_result_gen = Rcpp::wrap(computeHVArchiveCPP(archive, ref_point));
+    return rcpp_result_gen;
+END_RCPP
+}
 // nondominated
 LogicalVector nondominated(NumericMatrix m);
 RcppExport SEXP _moleopt_nondominated(SEXP mSEXP) {
@@ -55,6 +67,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_moleopt_computeHVArchiveCPP", (DL_FUNC) &_moleopt_computeHVArchiveCPP, 2},
     {"_moleopt_nondominated", (DL_FUNC) &_moleopt_nondominated, 1},
     {"_moleopt_run_mole_cpp", (DL_FUNC) &_moleopt_run_mole_cpp, 22},
     {NULL, NULL, 0}
